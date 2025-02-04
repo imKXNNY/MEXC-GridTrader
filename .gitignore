@@ -1,0 +1,8 @@
+__pycache__/
+.pytest_cache/
+.qodo/
+ohlcv_cache/
+results/
+venv/
+
+.env

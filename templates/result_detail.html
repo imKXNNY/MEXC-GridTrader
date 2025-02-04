@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Simulation Result Detail</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <h1 class="text-3xl text-center font-bold mt-5">Simulation Result Detail</h1>
+    <div class="metrics max-w-4xl mx-auto bg-white p-5 rounded-lg shadow-md mt-5">
+        <h2 class="text-xl font-semibold text-center">Summary Metrics</h2>
+        <table class="w-full border-collapse mt-4">
+            <tr>
+                <th class="border px-4 py-2">Total Profit</th>
+                <th class="border px-4 py-2">Number of Trades</th>
+                <th class="border px-4 py-2">Win Rate</th>
+                <th class="border px-4 py-2">Avg Profit/Trade</th>
+                <th class="border px-4 py-2">Max Drawdown</th>
+                <th class="border px-4 py-2">Sharpe Ratio</th>
+            </tr>
+            <tr>
+                <td class="border px-4 py-2">
+                    {% if metrics.total_profit is not none %}
+                        {{ metrics.total_profit|round(2) }}
+                    {% else %}
+                        N/A
+                    {% endif %}
+                </td>
+                <td class="border px-4 py-2">
+                    {{ metrics.num_trades if metrics.num_trades is not none else 'N/A' }}
+                </td>
+                <td class="border px-4 py-2">
+                    {% if metrics.win_rate is not none %}
+                        {{ (metrics.win_rate * 100)|round(2) }}%
+                    {% else %}
+                        N/A
+                    {% endif %}
+                </td>
+                <td class="border px-4 py-2">
+                    {% if metrics.avg_profit_per_trade is not none %}
+                        {{ metrics.avg_profit_per_trade|round(2) }}
+                    {% else %}
+                        N/A
+                    {% endif %}
+                </td>
+                <td class="border px-4 py-2">
+                    {% if metrics.max_drawdown is not none %}
+                        {{ (metrics.max_drawdown * 100)|round(2) }}%
+                    {% else %}
+                        N/A
+                    {% endif %}
+                </td>
+                <td class="border px-4 py-2">
+                    {% if metrics.sharpe_ratio is not none %}
+                        {{ metrics.sharpe_ratio|round(2) }}
+                    {% else %}
+                        N/A
+                    {% endif %}
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="chart-container max-w-4xl mx-auto mt-5 bg-white p-5 rounded-lg shadow-md">
+        <h2 class="text-xl font-semibold text-center">Equity Curve</h2>
+        {{ equity_chart_html|safe }}
+    </div>
+
+    <div class="chart-container max-w-4xl mx-auto mt-5 bg-white p-5 rounded-lg shadow-md">
+        <h2 class="text-xl font-semibold text-center">Trade Orders</h2>
+        {{ orders_chart_html|safe }}
+    </div>
+
+    <p class="text-center mt-4">
+        <a class="text-blue-500" href="{{ url_for('results') }}">Back to Results List</a>
+    </p>
+
+    <div class="feedback text-center mt-4">
+        {% if metrics.total_profit is not none %}
+            <p class="text-green-500">Simulation completed successfully!</p>
+        {% else %}
+            <p class="text-red-500">There was an issue with the simulation results.</p>
+        {% endif %}
+    </div>
+</body>
+</html>
