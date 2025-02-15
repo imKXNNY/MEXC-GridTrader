@@ -12,16 +12,18 @@
   - [ ] Add a maximum drawdown limit or circuit-breaker during backtests.  
 
 - **Advanced Analytics**  
-  - [ ] Expand performance metrics (e.g., daily PnL, monthly breakdown, MAR ratio, sortino ratio).  
-  - [ ] Show advanced charts (like candlestick view or volume overlays).  
-  - [ ] Compare results across multiple parameter sets in a single UI.  
+  - [x] Basic performance metrics implemented (total profit, win rate, max drawdown, etc.)  
+  - [x] Trade execution visualization implemented  
+  - [ ] Expand metrics with daily PnL, monthly breakdown, MAR ratio, sortino ratio  
+  - [ ] Compare results across multiple parameter sets in a single UI  
+
 
 ## 2. Front-End & User Experience
 
 ### **2.1 Core UI/UX Enhancements**
 - **Modern Layout & Theming**  
   - [ ] Adopt a more comprehensive UI kit (e.g. Tailwind components, Bootstrap, Material, etc.).  
-  - [ ] Use a consistent color scheme and typography that reflects a “trading/analytical” vibe.  
+  - [ ] Use a consistent color scheme and typography that reflects a "trading/analytical" vibe.  
   - [ ] Break the single-page forms into multiple sections or a wizard if there are many parameters.
 
 - **Responsive & Mobile-Friendly**  
@@ -30,12 +32,12 @@
 
 ### **2.2 Backtest Management**
 - **Renaming & Notes**  
-  - [ ] Let users give each simulation/backtest a **custom name** or add a **description** (e.g. “HighVolTest_2025”).  
+  - [ ] Let users give each simulation/backtest a **custom name** or add a **description** (e.g. "HighVolTest_2025").  
   - [ ] Provide a note-taking field for specific remarks about conditions, observations, or results.
 
 - **Deletion & Archiving**  
   - [ ] Implement a **delete** button next to each backtest in the results list, with a confirmation prompt.  
-  - [ ] Optionally allow **archiving** older results instead of permanent deletion, so they’re hidden but not lost.
+  - [ ] Optionally allow **archiving** older results instead of permanent deletion, so they're hidden but not lost.
 
 - **Search & Filtering**  
   - [ ] Extend the search bar (currently by symbol) to filter by date range, interval, or profit range.  
@@ -45,7 +47,7 @@
 - **Parameter Organization**  
   - [ ] Group grid-related inputs (levels, percent_range) together.  
   - [ ] Group capital-related inputs (initial_capital, order_size) together.  
-  - [ ] Possibly add dynamic tooltips explaining each parameter or a help icon (“?”).
+  - [ ] Possibly add dynamic tooltips explaining each parameter or a help icon ("?").
 
 - **Validation & Feedback**  
   - [ ] Perform **client-side** checks (e.g., no negative capital) before submitting.  
@@ -53,7 +55,7 @@
   - [ ] Show a **progress/loading indicator** while data is fetched or the backtest is running (so the user knows the app is working).
 
 - **Parameter Presets**  
-  - [ ] Let users save and load **common parameter sets** (e.g. “ShortTerm_Grid5%”, “LongTerm_Grid10%”).  
+  - [ ] Let users save and load **common parameter sets** (e.g. "ShortTerm_Grid5%", "LongTerm_Grid10%").  
   - [ ] Provide a dropdown of recommended intervals or popular symbols.
 
 ### **2.4 Results Viewing**
@@ -62,8 +64,8 @@
   - [ ] Sort results by date, profit, trades, or symbol with a simple click on column headers.
 
 - **Comparison Mode**  
-  - [ ] Let users select multiple backtests and **compare** equity curves or performance metrics side by side.  
-  - [ ] Provide a multi-chart display or a single chart overlay for direct visual comparison.
+  - [ ] Let users select multiple backtests and compare performance metrics side by side.  
+  - [ ] Provide a multi-chart display for trade execution comparison.
 
 ### **2.5 Data Visualization**
 - **Candlestick Charts**  
@@ -72,15 +74,16 @@
 
 - **Customizable Chart Options**  
   - [ ] Include toggleable overlays (e.g., show/hide trades, show/hide moving averages).  
-  - [ ] Provide a date range slider or “zoom” functionality for large data sets.  
+  - [ ] Provide a date range slider or "zoom" functionality for large data sets.
 
 - **Metric Drill-Down**  
-  - [ ] Show per-candle or per-trade details on hover (like a mini tooltip with trade ID, PnL, etc.).  
-  - [ ] Plot equity curve **alongside** the price chart for a single timeline comparison.
+  - [x] Basic trade details on hover implemented  
+  - [ ] Enhance with more detailed order information and execution analysis
+
 
 ### **2.6 Overall Polish**
 - **User Onboarding**  
-  - [ ] Add a short guide or “Getting Started” modal for newcomers.  
+  - [ ] Add a short guide or "Getting Started" modal for newcomers.  
   - [ ] Provide example inputs and default symbols (e.g., BTC/USDT, ETH/USDT).
 
 - **Session & State Management**  
@@ -96,7 +99,7 @@
 - **Unit Testing & TDD**  
   - [ ] Write unit tests for `dynamic_grid_strategy` (checking buy/sell logic).  
   - [ ] Add tests for the CSV caching in `BaseDataHandler` (especially incremental fetch logic).  
-  - [ ] Integrate a test framework (pytest) and aim for code coverage on key modules.  
+  - [ ] Integrate a test framework (pytest) and aim for code coverage on key modules.
 
 - **Optimization**  
   - [ ] Implement parameter sweeps or grid search to find best `(percent_range, grid_levels, order_size, etc.)`.  
@@ -106,18 +109,28 @@
 
 - **Paper Trading**  
   - [ ] Hook into a MEXC paper trading environment (if available) or a simulation environment.  
-  - [ ] Reuse the same logic but place test orders on an exchange “sandbox.”  
+  - [ ] Reuse the same logic but place test orders on an exchange "sandbox."
 
 - **Live Trading**  
   - [ ] Use official MEXC SDK or ccxt to place real orders.  
-  - [ ] Ensure robust error handling, connectivity checks, and API key encryption.  
+  - [ ] Ensure robust error handling, connectivity checks, and API key encryption.
 
 ## 5. Deployment & Maintenance
 
 - **Deployment**  
   - [ ] Containerize app via Docker for consistent environment.  
-  - [ ] Possibly host on a small VM or PaaS solution with secure API key management.  
+  - [ ] Possibly host on a small VM or PaaS solution with secure API key management.
 
 - **Ongoing Maintenance**  
   - [ ] Implement logs & alerts for real-time monitoring (Slack/Telegram notifications).  
-  - [ ] Maintain a backlog of feature requests, bug fixes, and performance improvements.  
+  - [ ] Maintain a backlog of feature requests, bug fixes, and performance improvements.
+
+## 6. System Architecture & Performance
+
+- **Decoupled Trading Engine**  
+  - [ ] Refactor trading signal and calculation logic to run in a separate thread/process or microservice so that heavy computations don't interfere with the frontend.  
+  - [ ] Ensure asynchronous communication between the React dashboard and the trading engine (using APIs or websockets).
+
+- **Latency Optimization**  
+  - [ ] Benchmark performance of the trading engine independently and optimize critical paths (e.g. via multi-threading or asynchronous programming).  
+  - [ ] Investigate using a lower-level language for performance-critical components if necessary.

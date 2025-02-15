@@ -1,102 +1,159 @@
-import pandas as pd
-from typing import List, Tuple, Dict, Any
+import backtrader as bt
+from typing import List, Dict, Any
 
-def dynamic_grid_strategy(
-    historical_data: pd.DataFrame,
-    symbol: str,
-    interval: str,
-    grid_levels: int,
-    percent_range: float,
-    initial_capital: float,
-    order_size: float
-) -> Tuple[List[Dict[str, Any]], List[float], float]:
-    """
-    Implements the Dynamic Grid Trading Strategy.
+class BoxMacdRsiStrategy(bt.Strategy):
+    params = (
+        ('commission', 0.001),  # Commission per trade (0.1%)
+        ('slippage', 0.005),    # Slippage per trade (0.5%)
+        ('risk_percent', 1.0),  # Default risk percentage per trade
+        ('rsi_length', 14),
 
-    :param historical_data: DataFrame with columns: [time, open, high, low, close, volume].
-    :param symbol: Trading pair symbol.
-    :param interval: Timeframe for the data.
-    :param grid_levels: Number of grid levels (currently unused in basic example, but can be extended).
-    :param percent_range: Percentage for grid spacing (e.g., 0.05 for 5%).
-    :param initial_capital: Starting capital for the simulation.
-    :param order_size: Fixed dollar amount for each buy.
-    :return: (orders, equity_curve, final_pivot)
-    """
-    # Initialize
-    pivot = historical_data['close'].iloc[0]
-    cooldown = 0
-    capital = initial_capital
-    orders: List[Dict[str, Any]] = []
-    equity_curve = []
+        ('rsi_threshold', 50), 
+        ('use_stricter_rsi', False),
 
-    # Track how many units of the asset we hold (since each buy invests "order_size" at that moment)
-    units_held = 0.0
+        ('macd_fast', 14),
+        ('macd_slow', 28),
+        ('macd_signal', 9),
+        ('macd_above_signal', True),
+        ('use_atr_stops', True),
+        ('atr_period', 14),
+        ('atr_multiplier', 2.0),
+        ('partial_exit', True),
+        ('partial_pct', 10.0),
+        ('partial_atr_mult', 1.0),
+        ('final_atr_mult', 2.0),
+        ('margin_long', 1.0),
+        ('box_lookback', 31),
+        ('use_cooldown', False),
+        ('cooldown_bars', 1),
+        ('bars_back', 500),
+        ('use_next_bar_confirm', False)
+    )
 
-    for idx, row in historical_data.iterrows():
-        current_price = float(row['close'])
-        current_time = row['time']  # Keep as datetime or as-is
+    def __init__(self):
+        # Set commission and slippage
+        self.broker.setcommission(
+            commission=self.p.commission,
+        )
+        self.broker.set_slippage_perc(self.p.slippage, True, True, True, False)
+        
+        # Initialize indicators
 
-        # Check BUY signal
-        buy_threshold = pivot * (1 - percent_range)
-        if current_price < buy_threshold and cooldown == 0:
-            # Enough capital to place a new buy
-            if capital >= order_size:
-                # Calculate how many coins we get for "order_size" USD
-                coins_bought = order_size / current_price
-                units_held += coins_bought
-                capital -= order_size
+        self.rsi = bt.indicators.RSI(self.data.close, period=self.p.rsi_length)
+        self.macd = bt.indicators.MACD(
+            self.data.close,
+            period_me1=self.p.macd_fast,
+            period_me2=self.p.macd_slow,
+            period_signal=self.p.macd_signal
+        )
+        self.atr = bt.indicators.ATR(self.data, period=self.p.atr_period)
+        
+        # Initialize state variables
+        self.orders = []
+        self.last_entry_bar = None
 
-                orders.append({
-                    'type': 'buy',
-                    'time': str(current_time),
-                    'price': current_price,
-                    'coins': coins_bought
-                })
+        self.position_size = 0
+        self.position_cost = 0
+        self.position_stop = 0
+        self.position_partial_limit = 0
+        self.position_final_limit = 0
 
-                pivot = current_price  # Update pivot to the new price
-                cooldown = 3  # e.g., wait 3 candles before next buy
+    def next(self):
 
-        # Check SELL signal (for each buy). 
-        # In this simplistic approach, we treat the entire held position collectively,
-        # but we can also treat each buy separately for partial sells.
-        to_remove = []
-        for o_idx, order in enumerate(orders):
-            if order['type'] == 'buy':
-                sell_threshold = order['price'] * (1 + percent_range)
-                if current_price > sell_threshold:
-                    # We "sell" exactly the coins from that buy
-                    coins_sold = order['coins']
-                    # Revenue from the sell:
-                    revenue = coins_sold * current_price
-                    capital += revenue
-                    units_held -= coins_sold
 
-                    # Calculate profit in currency
-                    cost_basis = order['coins'] * order['price']
-                    profit = revenue - cost_basis
 
-                    orders.append({
-                        'type': 'sell',
-                        'time': str(current_time),
-                        'price': current_price,
-                        'coins': coins_sold,
-                        'profit': profit
-                    })
-                    pivot = current_price
-                    to_remove.append(o_idx)
+        # Skip if indicators are not ready
+        if len(self.data) < self.p.box_lookback:
+            return
 
-        # Remove the corresponding buy orders that got sold
-        # (so we don't sell them multiple times)
-        for idx_to_rm in sorted(to_remove, reverse=True):
-            orders.pop(idx_to_rm)
+        # Get current price data
+        c_open = self.data.open[0]
+        c_high = self.data.high[0]
+        c_low = self.data.low[0]
+        c_close = self.data.close[0]
 
-        # Mark-to-market equity
-        # capital + (units_held * current_price)
-        total_equity = capital + (units_held * current_price)
-        equity_curve.append(total_equity)
+        # Calculate box boundaries
+        box_low = min(self.data.low.get(size=self.p.box_lookback))
+        box_high = max(self.data.high.get(size=self.p.box_lookback))
 
-        # Decrease cooldown
-        if cooldown > 0:
-            cooldown -= 1
+        # Candle patterns
+        rolling_lowest5 = min(self.data.low.get(size=5))
+        is_hammer = (
+            c_close > c_open and
+            abs(c_low - rolling_lowest5) < 1e-12 and
+            (c_high - c_close) > 2*(c_close - c_open)
+        )
+        candle_range = c_high - c_low
+        is_doji = abs(c_close - c_open) < candle_range*0.1
 
-    return orders, equity_curve, pivot
+        # Support check
+        near_support_now = (c_close > box_low*0.98) and (c_close < box_low*1.02)
+
+        # RSI + MACD checks
+        rsi_ok = (self.rsi[0] > 50) if self.p.use_stricter_rsi else (self.rsi[0] > self.p.rsi_threshold)
+        if self.p.macd_above_signal:
+            macd_ok = (self.macd.macd[0] > self.macd.signal[0])
+        else:
+            macd_ok = (self.macd.macd[0] > 0)
+
+        entry_signal = (
+            near_support_now and
+            (is_hammer or is_doji) and
+            rsi_ok and
+            macd_ok
+        )
+
+        # Position management logic
+        if not self.position:
+            if entry_signal:
+                self.enter_position(c_close)
+        else:
+            self.manage_position(c_close, c_low, c_high)
+
+    def enter_position(self, price):
+        # Calculate position size and limits
+        stop_price = price - self.atr[0] * self.p.atr_multiplier
+        position_size = self.calculate_position_size(price, stop_price)
+        
+        # Place buy order
+        self.buy(size=position_size)
+        
+        # Set position parameters
+        self.position_size = position_size
+        self.position_cost = position_size * price
+        self.position_stop = stop_price
+        self.position_partial_limit = price + self.atr[0] * self.p.partial_atr_mult
+        self.position_final_limit = price + self.atr[0] * self.p.final_atr_mult
+
+    def manage_position(self, price, low, high):
+        # Check for stop loss
+        if low <= self.position_stop:
+            self.close()
+            return
+
+        # Check for partial exit
+        if self.p.partial_exit and high >= self.position_partial_limit:
+            partial_size = self.position_size * (self.p.partial_pct / 100.0)
+            self.sell(size=partial_size)
+            self.position_size -= partial_size
+
+        # Check for final exit
+        if high >= self.position_final_limit:
+            self.close()
+
+    def calculate_position_size(self, price, stop_price):
+        # Calculate position size based on risk management
+        risk_amount = self.broker.getvalue() * (self.p.risk_percent / 100.0)
+        position_size = risk_amount / max((price - stop_price), 1e-6)
+        return position_size
+
+    def notify_trade(self, trade):
+        # Called when a trade is closed
+        if trade.isclosed:
+            self.orders.append({
+                "type": "sell" if trade.size < 0 else "buy",
+                "time": str(self.data.datetime.datetime()),
+                "price": trade.price,
+                "size": abs(trade.size),
+                "profit": trade.pnl
+            })

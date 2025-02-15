@@ -1,0 +1,13 @@
+<div class="bg-white rounded-lg shadow p-6">
+    <h2 class="text-xl font-semibold mb-4">Available Documents</h2>
+    <ul class="space-y-2">
+        {% for doc in docs %}
+        <li>
+            <a href="/docs/{{ doc.name }}" class="text-blue-600 hover:text-blue-800">
+                {{ doc.title }}
+            </a>
+            <p class="text-gray-600 text-sm">{{ doc.description }}</p>
+        </li>
+        {% endfor %}
+    </ul>
+</div>

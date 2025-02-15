@@ -1,3 +1,4 @@
+# /src/results_storage.py
 import os
 import json
 import time
@@ -13,26 +14,34 @@ if not os.path.exists(RESULTS_DIR):
 def save_simulation_result(
     params: Dict[str, Any],
     orders: List[Dict[str, Any]],
-    equity_curve: List[float],
-    candle_data: Optional[pd.DataFrame] = None   # <-- new
+    final_value: float,
+    candle_data: Optional[pd.DataFrame] = None
 ) -> str:
-    """
-    Save simulation results and computed metrics to a JSON file.
-    """
-    metrics = calculate_advanced_metrics(orders, equity_curve, params.get("initial_capital", 10000))
-    logger.info("Calculated metrics for simulation result.")
+
+    initial_capital = params.get("initial_capital", 10000)
+    metrics = calculate_advanced_metrics(orders, initial_capital, final_value)
 
     result = {
         "timestamp": int(time.time()),
         "params": params,
         "orders": orders,
-        "equity_curve": equity_curve,
+        "final_value": final_value,
         "metrics": metrics
     }
 
+    # Convert candle_data to JSON
     if candle_data is not None and not candle_data.empty:
-        # Convert the entire DF to a list-of-dicts for JSON
+        if "time" in candle_data.columns:
+            if pd.api.types.is_datetime64_any_dtype(candle_data["time"]):
+                candle_data["time"] = candle_data["time"].dt.strftime("%Y-%m-%d %H:%M:%S")
         result["candles"] = candle_data.to_dict(orient="records")
+
+    # Store initial and final equity values
+    result["equity"] = {
+        "initial": initial_capital,
+        "final": final_value
+    }
+
 
     filename = os.path.join(RESULTS_DIR, f"simulation_{result['timestamp']}.json")
     with open(filename, 'w') as f:

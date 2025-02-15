@@ -1,6 +1,7 @@
 import ccxt
 import logging
 from typing import Optional, Dict, Any
+import datetime
 
 # Attempt to import the official MEXC SDK.
 try:
@@ -41,8 +42,11 @@ class MEXCExchange:
                 'apiKey': self.api_key,
                 'secret': self.api_secret,
                 'enableRateLimit': True,
+                'options': {
+                    'adjustForTimeDifference': True,
+                },
             })
-            logger.info("Using ccxt for API integration.")
+            logger.info(f"Using ccxt for API integration")
 
     def create_order(
         self,
@@ -55,14 +59,6 @@ class MEXCExchange:
     ) -> Optional[Dict[str, Any]]:
         """
         Create an order (limit or market) for the given symbol.
-
-        :param symbol: Trading pair (e.g., 'BTC/USDT').
-        :param order_type: 'limit' or 'market'.
-        :param side: 'BUY' or 'SELL'.
-        :param amount: Order amount (in quote or base currency depending on the order type).
-        :param price: Price for limit orders.
-        :param test: If True, uses the test order endpoint (if available).
-        :return: The created order or None if an error occurred.
         """
         if not symbol or not order_type or not side or not amount:
             logger.error("Missing required parameters for order creation: symbol=%s, order_type=%s, side=%s, amount=%s",
@@ -109,10 +105,6 @@ class MEXCExchange:
     def cancel_order(self, order_id: str, symbol: str) -> Optional[Dict[str, Any]]:
         """
         Cancel an order by its ID.
-
-        :param order_id: The ID of the order to cancel.
-        :param symbol: The trading pair symbol.
-        :return: The cancellation result or None if an error occurred.
         """
         if not order_id or not symbol:
             logger.error("Missing required parameters for order cancellation.")
@@ -131,9 +123,6 @@ class MEXCExchange:
     def get_open_orders(self, symbol: str) -> list:
         """
         Retrieve all open orders for a given trading symbol.
-
-        :param symbol: The trading pair symbol.
-        :return: A list of open orders, or an empty list on error.
         """
         if not symbol:
             logger.error("Missing symbol for fetching open orders.")
@@ -151,9 +140,6 @@ class MEXCExchange:
     def fetch_ticker(self, symbol: str) -> Optional[Dict[str, Any]]:
         """
         Fetch the latest ticker data for a given symbol.
-
-        :param symbol: The trading pair symbol.
-        :return: The ticker data or None if an error occurred.
         """
         if not symbol:
             logger.error("Missing symbol for fetching ticker.")
@@ -167,3 +153,45 @@ class MEXCExchange:
         except Exception as e:
             logger.error("Error fetching ticker: %s", e)
             return None
+
+    def get_account_info(self) -> Dict[str, Any]:
+        """Get formatted account information with enhanced error handling"""
+        try:
+            if self.use_sdk:
+                # Assuming the SDK provides an 'account_info' method.
+                account = self.client.accountInfo()
+                if not account or 'USDT' not in account:
+                    raise ValueError("USDT balance not found in account data (SDK response).")
+                usdt_info = account['USDT']
+                free = usdt_info.get('free', 0)
+                used = usdt_info.get('used', 0)
+                total = usdt_info.get('total', 0)
+            else:
+                account = self.client.fetchBalance()
+                print(account)
+                # ccxt returns a dict with keys 'free', 'used', and 'total'
+                if not account or 'free' not in account or 'USDT' not in account['free']:
+                    raise ValueError("USDT balance not found in account data (ccxt response).")
+                free = account['free']['USDT']
+                used = account['used']['USDT']
+                total = account['total']['USDT']
+
+            return {
+                "balances": {
+                    "USDT": {
+                        "free": float(free),
+                        "used": float(used),
+                        "total": float(total)
+                    }
+                },
+                "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat()
+            }
+        except ccxt.NetworkError as e:
+            logger.error("Network error: %s", e)
+            raise
+        except ccxt.ExchangeError as e:
+            logger.error("Exchange error: %s", e)
+            raise
+        except Exception as e:
+            logger.error("Unexpected error: %s", e)
+            raise

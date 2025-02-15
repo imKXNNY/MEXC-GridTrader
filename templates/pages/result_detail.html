@@ -11,7 +11,7 @@
 </head>
 <body class="bg-gray-100">
     <h1 class="text-3xl text-center font-bold mt-5">Simulation Result Detail</h1>
-    <div class="metrics max-w-4xl mx-auto bg-white p-5 rounded-lg shadow-md mt-5">
+    <div class="metrics mx-auto bg-white p-5 rounded-lg shadow-md mt-5">
         <h2 class="text-xl font-semibold text-center">Summary Metrics</h2>
         <table class="w-full border-collapse mt-4">
             <tr>
@@ -65,18 +65,16 @@
         </table>
     </div>
 
-    <div class="chart-container max-w-4xl mx-auto mt-5 bg-white p-5 rounded-lg shadow-md">
-        <h2 class="text-xl font-semibold text-center">Equity Curve</h2>
-        {{ equity_chart_html|safe }}
+    <div class="max-w-4xl mx-auto mt-5">
+        <div class="chart-container bg-white p-5 rounded-lg shadow-md">
+            <h2 class="text-xl font-semibold text-center">Trade Orders</h2>
+            {{ orders_chart_html|safe }}
+        </div>
     </div>
 
-    <div class="chart-container max-w-4xl mx-auto mt-5 bg-white p-5 rounded-lg shadow-md">
-        <h2 class="text-xl font-semibold text-center">Trade Orders</h2>
-        {{ orders_chart_html|safe }}
-    </div>
 
     <p class="text-center mt-4">
-        <a class="text-blue-500" href="{{ url_for('results') }}">Back to Results List</a>
+        <a class="text-blue-500" href="{{ url_for('dashboard') }}">Back to Results List</a>
     </p>
 
     <div class="feedback text-center mt-4">

@@ -1,3 +1,4 @@
+# /src/data_handler/base_data_handler.py
 import os
 import pandas as pd
 import ccxt
@@ -35,7 +36,11 @@ class BaseDataHandler:
         if not os.path.exists(csv_path):
             return pd.DataFrame()
         try:
+            # Read CSV and try to parse 'time' as datetime
             df = pd.read_csv(csv_path, parse_dates=['time'])
+            # If for any reason the 'time' column is not datetime, force conversion
+            if not pd.api.types.is_datetime64_any_dtype(df['time']):
+                df['time'] = pd.to_datetime(df['time'], errors='coerce')
             df.sort_values('time', inplace=True)
             df.reset_index(drop=True, inplace=True)
             logger.info("Loaded %d rows from cache: %s", len(df), csv_path)
@@ -72,13 +77,12 @@ class BaseDataHandler:
         if not cached_df.empty:
             cached_df.sort_values('time', inplace=True)
             latest_time_in_cache = cached_df['time'].iloc[-1]
-            # Convert that timestamp to ms
-            last_ts_ms = int(latest_time_in_cache.value // 10**6)  # pd.Timestamp => nanoseconds, so // 1e6 => ms
+            # Convert that timestamp to ms (pd.Timestamp.value gives nanoseconds)
+            last_ts_ms = int(latest_time_in_cache.value // 10**6)
             if start_time is None:
-                # If user didn't pass a specific start_time, let's fetch from the last known timestamp
+                # If user didn't pass a specific start_time, fetch from the last known timestamp
                 start_time = last_ts_ms
         else:
-            # If we have no cached data, we'll fetch from whatever start_time was given
             last_ts_ms = start_time or None
 
         exchange = ccxt.mexc({'enableRateLimit': True})
@@ -86,7 +90,7 @@ class BaseDataHandler:
 
         # Keep fetching until we’ve gotten up to 'end_time' or no more new data.
         while True:
-            # We might pass start_time=last_ts_ms + 1 to avoid re-downloading the last candle, for instance
+            # Avoid re-downloading the last candle by using last_ts_ms + 1
             since = last_ts_ms + 1 if last_ts_ms else None
 
             # If end_time is in ms and we’re already past it, break
@@ -100,14 +104,14 @@ class BaseDataHandler:
                 break
 
             if not ohlcv:
-                # No more data returned => we’ve fetched everything
                 logger.info("No additional candles returned from exchange.")
                 break
 
             fresh_df = pd.DataFrame(ohlcv, columns=['time', 'open', 'high', 'low', 'close', 'volume'])
+            # Convert from milliseconds to datetime
             fresh_df['time'] = pd.to_datetime(fresh_df['time'], unit='ms')
 
-            # If user specified end_time, cut off any candles beyond it
+            # Cut off any candles beyond end_time, if specified
             if end_time is not None:
                 end_dt = pd.to_datetime(end_time, unit='ms')
                 fresh_df = fresh_df[fresh_df['time'] <= end_dt]
@@ -117,21 +121,15 @@ class BaseDataHandler:
 
             logger.info("Fetched %d new candles starting at %s.", len(fresh_df), fresh_df['time'].iloc[0])
 
-            # Append to our list
             all_dfs.append(fresh_df)
-
-            # Update last_ts_ms for next iteration
             last_ts_ms = int(fresh_df['time'].iloc[-1].value // 10**6)
 
-            # If we got fewer than 1000 candles, likely we’ve reached the latest data
             if len(fresh_df) < 1000:
                 break
 
-        # Merge everything
         merged = pd.concat(all_dfs, ignore_index=True).drop_duplicates(subset=['time']).sort_values('time')
         merged.reset_index(drop=True, inplace=True)
 
-        # Save merged result back to CSV
         if not merged.empty:
             self._save_to_csv(merged, csv_path)
 

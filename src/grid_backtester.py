@@ -1,37 +1,29 @@
+# src/grid_backtester.py
+import backtrader as bt
+from typing import Tuple, List, Dict, Any
 import pandas as pd
-import matplotlib.pyplot as plt
-from typing import Tuple, List
 
 from config import logger
 from src.data_handler.base_data_handler import BaseDataHandler
-from src.trading_strategy import dynamic_grid_strategy
+from src.trading_strategy import BoxMacdRsiStrategy
+
 
 class GridBacktester(BaseDataHandler):
-    """
-    Simulates a dynamic grid trading strategy on historical data.
-    Inherits from BaseDataHandler for fetching/storing OHLCV data.
-    """
-
     def __init__(
         self,
         symbol: str,
         interval: str,
-        grid_levels: int,
-        percent_range: float,
         initial_capital: float,
-        order_size: float
+        risk_percent: float,
+        box_params: Dict[str, Any]
     ):
         super().__init__()
         self.symbol = symbol
         self.interval = interval
-        self.grid_levels = grid_levels
-        self.percent_range = percent_range
         self.initial_capital = initial_capital
-        self.order_size = order_size
+        self.risk_percent = risk_percent
+        self.box_params = box_params
 
-        self.orders = []
-        self.equity_curve = []
-        self.pivot = None
 
     def fetch_and_store_data(self, start_time: int = None, end_time: int = None) -> None:
         """
@@ -43,78 +35,44 @@ class GridBacktester(BaseDataHandler):
         else:
             self.store_data(self.symbol, data)
 
-    def simulate(self) -> Tuple[List[dict], List[float]]:
-        """
-        Run the dynamic grid strategy simulation.
-        Returns a tuple of (orders, equity_curve).
-        """
+    def simulate(self):
         data = self.get_stored_data(self.symbol)
         if data is None or data.empty:
             raise ValueError("No data to run simulation.")
 
-        orders, equity, final_pivot = dynamic_grid_strategy(
-            data,
-            self.symbol,
-            self.interval,
-            grid_levels=self.grid_levels,
-            percent_range=self.percent_range,
-            initial_capital=self.initial_capital,
-            order_size=self.order_size
-        )
+        logger.info("Data being passed to Backtrader: %s", data.head())
 
-        self.orders = orders
-        self.equity_curve = equity
-        self.pivot = final_pivot
-        return orders, equity
+        # Create Cerebro engine
+        cerebro = bt.Cerebro()
+        # Combine box_params with risk_percent for strategy
+        strategy_params = {**self.box_params, 'risk_percent': self.risk_percent}
+        cerebro.addstrategy(BoxMacdRsiStrategy, **strategy_params)
 
-    def plot_equity_curve(self) -> None:
-        """
-        Quick debug/visualization method to show the equity curve using matplotlib.
-        """
-        if not self.equity_curve:
-            logger.warning("No equity curve data available to plot.")
-            return
+        if 'time' in data.columns:
+            # Convert time column to datetime if not already
+            if not pd.api.types.is_datetime64_any_dtype(data['time']):
+                # If timestamps are in milliseconds, convert directly
+                if data['time'].dtype == 'int64' and data['time'].max() > 1e12:
+                    data['time'] = pd.to_datetime(data['time'], unit='ms')
+                else:
+                    # Fallback to string parsing with error handling
+                    data['time'] = pd.to_datetime(data['time'], errors='coerce')
+            # Ensure time is the index for backtrader
+            data.set_index('time', inplace=True)
+        # Create data feed
 
-        plt.figure(figsize=(10, 5))
-        plt.plot(self.equity_curve, label="Equity Curve", color='purple')
-        plt.xlabel("Time Steps")
-        plt.ylabel("Total Equity")
-        plt.title("Dynamic Grid Trading Backtest - Equity Curve")
-        plt.legend()
-        plt.grid(True)
-        plt.show()
+        data_feed = bt.feeds.PandasData(dataname=data)
+        cerebro.adddata(data_feed)
 
-    def plot_orders(self) -> None:
-        """
-        Quick debug/visualization method to plot buy/sell points on the historical price chart.
-        """
-        data = self.get_stored_data(self.symbol)
-        if data is None or data.empty:
-            logger.warning("No historical data available for plotting.")
-            return
+        # Set initial capital
+        cerebro.broker.set_cash(self.initial_capital)
 
-        plt.figure(figsize=(12, 6))
-        plt.plot(data['time'], data['close'], label="Price", color='blue')
+        # Run backtest
+        results = cerebro.run()
 
-        buys = [order for order in self.orders if order['type'] == 'buy']
-        sells = [order for order in self.orders if order['type'] == 'sell']
-
-        if buys:
-            plt.scatter(
-                [order['time'] for order in buys],
-                [order['price'] for order in buys],
-                color='green', label="Buy", marker="^", s=100
-            )
-        if sells:
-            plt.scatter(
-                [order['time'] for order in sells],
-                [order['price'] for order in sells],
-                color='red', label="Sell", marker="v", s=100
-            )
-
-        plt.xlabel("Time")
-        plt.ylabel("Price")
-        plt.title(f"Dynamic Grid Trading Orders - {self.symbol}")
-        plt.legend()
-        plt.grid(True)
-        plt.show()
+        # Get results from strategy
+        if results:
+            strategy = results[0]
+            return strategy.orders, cerebro.broker.getvalue()
+        
+        return [], 0.0

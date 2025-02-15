@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MEXC GridTrader - Documentation</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tailwindcss/typography@0.5.9/dist/typography.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css">
+    <style>
+        .markdown-body {
+            box-sizing: border-box;
+            min-width: 200px;
+            max-width: 980px;
+            margin: auto;
+            margin-top: 24px;
+            padding: 45px;
+        }
+
+        @media (max-width: 767px) {
+            .markdown-body {
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    {% include 'partials/_navbar.html' %}
+    <div class="markdown-body">
+        <div class="container mx-auto px-4 py-8">
+            <h1 class="text-3xl font-bold mb-6">{{ doc_name }}</h1>
+            <div class="prose prose-sm sm:prose lg:prose-lg xl:prose-xl max-w-none 
+                        prose-headings:font-bold prose-headings:text-gray-800 
+                        prose-p:text-gray-600 prose-li:my-1 
+                        prose-code:bg-gray-100 prose-code:px-1 prose-code:rounded 
+                        prose-pre:bg-gray-800 prose-pre:text-white 
+                        prose-blockquote:border-l-4 prose-blockquote:border-gray-300 prose-blockquote:pl-4 prose-blockquote:italic">
+                {{ doc_content | safe }}
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>
