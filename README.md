@@ -43,30 +43,39 @@
 - **Interactive Charts** – View price movements, equity curves, and trade executions via an intuitive web UI.  
 - **Trade Analysis** – Automatic calculation of performance metrics (profit, drawdown, Sharpe, etc.).  
 - **OHLCV Data Caching** – Efficiently fetch and store candle data, reducing API usage.  
-- **Planned** – Volatility-based grid adjustments, advanced risk management, and live/paper trading integration.
+- **Dynamic Grid Adjustments** – Automatically adjusts grid spacing based on market volatility using ATR and standard deviation.
+- **Adaptive Pivot Logic** – Uses moving averages to dynamically adjust pivot points for grid levels.
+- **Advanced Risk Management** – Includes stop-loss, trailing stops, and position sizing based on volatility.
+
 
 ## Roadmap
-### **Current:** *Phase 3: Backtesting Framework Development*
-- Historical Data Acquisition.  
-- Simulation Engine.
+![Mermaid Gantt Chart](assets/ROADMAP-MERMAID-1.png)
 
-### **Next:** *Phase 4: Paper Trading Mode*
-- Sandbox Environment.  
-- Integration Testing.
+### Current Phase: Backtesting Framework Development
+- Historical Data Acquisition
+- Simulation Engine
 
-**[ROADMAP](docs/ROADMAP.md)** – Check out more Roadmap details here.
+### Next Phase: Paper Trading Mode
+- Sandbox Environment
+- Integration Testing
+
+For more details, see the [Project Roadmap](docs/ROADMAP.md)
+
 
 ## Recent Enhancements
 - **Improved Error Handling & Logging** – Better debugging and analysis.  
-- **Enhanced UI** – With client-side validation and improved feedback in HTML templates.  
-- **Search & Pagination** – Quickly locate specific backtest results in the listing page.
+- **Enhanced UI** – Modern interface with dynamic parameter controls and real-time feedback.
+- **Search & Filtering** – Advanced filtering by date range, profit, and volatility metrics.
+- **Parameter Presets** – Save and load common parameter sets for quick backtesting.
+
 
 **[CHANGELOG](docs/CHANGELOG.md)** – Check the changelog for recent improvements and bug fixes.
 
 ## Future Work
-- **Dynamic Parameter Tuning** – Automate adjusting grid levels or pivot logic based on volatility.  
-- **Advanced Risk Management** – Stop-loss, trailing stops, max drawdown limits, and improved capital allocation.  
+- **Parameter Optimization** – Automated grid search for optimal parameter combinations.
+- **Enhanced Analytics** – Expanded performance metrics including volatility-adjusted returns.
 - **Paper & Live Trading** – Connect to MEXC’s paper/real environment for real-time operations.
+
 
 **[TODO](docs/TODO.md)** – Check the TODO list for upcoming tasks and features.
 
@@ -80,26 +89,44 @@
    cd mexc-gridtrader
    ```
 
-2. **Create a Virtual Environment** *(optional, but recommended)* 
+2. **Install Poetry** *(dependency management)*
    ```bash
-   python -m venv venv
-   source venv/bin/activate  # On Windows use `venv\Scripts\activate`
+   pip install poetry
    ```
 
 3. **Install Dependencies**  
    ```bash
-   pip install -r requirements.txt
+   poetry install
    ```
 
 4. **Configure Environment**  
    - Create a `.env` file (copy from `.env.example`) and fill in your MEXC API keys.  
    - Check or adjust settings (like `FLASK_DEBUG` or `LOG_LEVEL`) to your preference.
 
-5. **Run the App**  
+5. **Run with Docker Compose** *(recommended)*
    ```bash
-   python app.py
+   docker-compose up --build
    ```
-   Visit [http://127.0.0.1:5000](http://127.0.0.1:5000) (Default) to view the UI.
+   Access the app at:
+   - Backend: http://localhost:5000
+   - Frontend: http://localhost:3000
+
+6. **Run Locally** *(alternative)*
+   ```bash
+   # Backend
+   cd backend
+   poetry run python app.py
+
+   # Frontend (in separate terminal)
+   cd frontend
+   npm install
+   npm run dev
+   ```
+
+The application will be available at:
+- Backend: http://localhost:5000
+- Frontend: http://localhost:3000
+
 
 ## Contributing
 We welcome contributions via Pull Requests. Please open an Issue first to discuss changes or features.
@@ -107,6 +134,29 @@ We welcome contributions via Pull Requests. Please open an Issue first to discus
 ---
 
 **MEXC GridTrader** is actively maintained and evolving; stay tuned for further updates, and feel free to submit feature requests or bug reports!
+
+### Development Setup
+
+1. **Install Pre-commit Hooks**
+   ```bash
+   pre-commit install
+   ```
+
+2. **Running Tests**
+   ```bash
+   poetry run pytest
+   ```
+
+3. **Building for Production**
+   ```bash
+   # Backend
+   poetry build
+
+   # Frontend
+   cd frontend
+   npm run build
+   ```
+
  
 <p align="center">
   <a href="https://github.com/imKXNNY">

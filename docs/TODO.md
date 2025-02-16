@@ -2,9 +2,16 @@
 
 ## 1. Strategy & Features
 
+- **Dynamic Strategy Selection**
+  - [ ] Implement strategy selection UI component
+  - [ ] Create strategy-specific parameter inputs
+  - [ ] Add strategy validation and configuration
+  - [ ] Enable switching between different trading strategies
+
 - **Dynamic Parameters**  
-  - [ ] Add volatility-based grid spacing (e.g. using ATR or standard deviation).  
-  - [ ] Implement adaptive pivot logic (e.g. moving average or local min/max).  
+  - [x] Add volatility-based grid spacing (e.g. using ATR or standard deviation).  
+  - [x] Implement adaptive pivot logic (e.g. moving average or local min/max).  
+
 
 - **Risk Management**  
   - [ ] Configure stop-loss or trailing stop features for open positions.  
@@ -18,7 +25,13 @@
   - [ ] Compare results across multiple parameter sets in a single UI  
 
 
-## 2. Front-End & User Experience
+## 2. Frontend Architecture
+  - [x] Document frontend architecture options
+  - [ ] Implement React frontend with Flask backend *(currently on-going)*
+  - [x] Maintain modular architecture for future flexibility
+
+## 3. Front-End & User Experience
+
 
 ### **2.1 Core UI/UX Enhancements**
 - **Modern Layout & Theming**  
@@ -36,8 +49,9 @@
   - [ ] Provide a note-taking field for specific remarks about conditions, observations, or results.
 
 - **Deletion & Archiving**  
-  - [ ] Implement a **delete** button next to each backtest in the results list, with a confirmation prompt.  
+  - [x] Implement a **delete** button next to each backtest in the results list, with a confirmation prompt.  
   - [ ] Optionally allow **archiving** older results instead of permanent deletion, so they're hidden but not lost.
+
 
 - **Search & Filtering**  
   - [ ] Extend the search bar (currently by symbol) to filter by date range, interval, or profit range.  
@@ -69,7 +83,7 @@
 
 ### **2.5 Data Visualization**
 - **Candlestick Charts**  
-  - [ ] Replace the simple line chart with a Plotly candlestick chart for daily/hourly bars.  
+  - [x] Replace the simple line chart with a Plotly candlestick chart for bars.  
   - [ ] Add volume bars or overlays to show trading volume on the same chart.
 
 - **Customizable Chart Options**  
@@ -118,7 +132,7 @@
 ## 5. Deployment & Maintenance
 
 - **Deployment**  
-  - [ ] Containerize app via Docker for consistent environment.  
+  - [x] Containerize app via Docker for consistent environment.  
   - [ ] Possibly host on a small VM or PaaS solution with secure API key management.
 
 - **Ongoing Maintenance**  

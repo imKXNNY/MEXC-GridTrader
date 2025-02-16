@@ -2,15 +2,36 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.1] - 2025-02-16
+### Added
+- Project structure refactor with backend/frontend separation
+- Poetry dependency management implementation
+- Docker containerization for both backend and frontend
+- Vite + React + TypeScript + SWC frontend bone-setup
+- Docker Compose orchestration configuration
+
+### Changed
+- Moved Flask backend to dedicated backend directory
+- Updated import paths to reflect new structure
+- Migrated from requirements.txt to Poetry pyproject.toml
+- Updated documentation to reflect new project structure
+
 ## [0.3.0] - 2025-02-15
 ### Added
 - Simplified results storage to only track initial and final equity values
 - Enhanced trade orders visualization with improved clarity
+- Added delete functionality for individual and all results
+- Implemented confirmation prompts for deletions
+- Added architectural planning for frontend improvements
 
 ### Changed
 - Removed equity curve tracking to focus on core trading metrics
 - Updated result detail page to show only trade orders chart
 - Simplified metrics calculation to not depend on equity curve data
+- Updated documentation to reflect architectural decisions
+
+
+
 
 ## [0.2.0] - 2025-02-01
 ### Added

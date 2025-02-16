@@ -7,6 +7,9 @@ class BoxMacdRsiStrategy(bt.Strategy):
         ('slippage', 0.005),    # Slippage per trade (0.5%)
         ('risk_percent', 1.0),  # Default risk percentage per trade
         ('rsi_length', 14),
+        ('volatility_period', 20),  # Period for volatility calculation
+        ('volatility_threshold', 0.02),  # Minimum volatility threshold
+        ('adaptive_pivot_period', 50),  # Period for adaptive pivot calculation
 
         ('rsi_threshold', 50), 
         ('use_stricter_rsi', False),
@@ -38,7 +41,6 @@ class BoxMacdRsiStrategy(bt.Strategy):
         self.broker.set_slippage_perc(self.p.slippage, True, True, True, False)
         
         # Initialize indicators
-
         self.rsi = bt.indicators.RSI(self.data.close, period=self.p.rsi_length)
         self.macd = bt.indicators.MACD(
             self.data.close,
@@ -47,11 +49,17 @@ class BoxMacdRsiStrategy(bt.Strategy):
             period_signal=self.p.macd_signal
         )
         self.atr = bt.indicators.ATR(self.data, period=self.p.atr_period)
+        # Volatility and adaptive pivot indicators
+        self.volatility = bt.indicators.StdDev(
+            self.data.close, period=self.p.volatility_period
+        )
+        self.adaptive_pivot = bt.indicators.SMA(
+            self.data.close, period=self.p.adaptive_pivot_period
+        )
         
         # Initialize state variables
         self.orders = []
         self.last_entry_bar = None
-
         self.position_size = 0
         self.position_cost = 0
         self.position_stop = 0
@@ -59,9 +67,6 @@ class BoxMacdRsiStrategy(bt.Strategy):
         self.position_final_limit = 0
 
     def next(self):
-
-
-
         # Skip if indicators are not ready
         if len(self.data) < self.p.box_lookback:
             return
@@ -72,9 +77,16 @@ class BoxMacdRsiStrategy(bt.Strategy):
         c_low = self.data.low[0]
         c_close = self.data.close[0]
 
-        # Calculate box boundaries
-        box_low = min(self.data.low.get(size=self.p.box_lookback))
-        box_high = max(self.data.high.get(size=self.p.box_lookback))
+        # Calculate adaptive box boundaries using pivot
+        pivot_level = self.adaptive_pivot[0]
+        box_low = min(
+            pivot_level * 0.98,
+            min(self.data.low.get(size=self.p.box_lookback))
+        )
+        box_high = max(
+            pivot_level * 1.02,
+            max(self.data.high.get(size=self.p.box_lookback))
+        )
 
         # Candle patterns
         rolling_lowest5 = min(self.data.low.get(size=5))
@@ -111,10 +123,16 @@ class BoxMacdRsiStrategy(bt.Strategy):
             self.manage_position(c_close, c_low, c_high)
 
     def enter_position(self, price):
-        # Calculate position size and limits
-        stop_price = price - self.atr[0] * self.p.atr_multiplier
-        position_size = self.calculate_position_size(price, stop_price)
+        # Dynamic grid spacing based on volatility
+        volatility_factor = max(
+            self.volatility[0] / self.data.close[0],
+            self.p.volatility_threshold
+        )
+        atr_multiplier = self.p.atr_multiplier * (1 + volatility_factor)
         
+        stop_price = price - self.atr[0] * atr_multiplier
+        position_size = self.calculate_position_size(price, stop_price)
+
         # Place buy order
         self.buy(size=position_size)
         

@@ -1,0 +1,41 @@
+.docs-index {
+  padding: 2rem;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.docs-title {
+  color: var(--color-primary);
+  margin-bottom: 2rem;
+}
+
+.docs-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.doc-item {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.doc-title {
+  margin: 0 0 0.5rem 0;
+}
+
+.doc-link {
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+.doc-link:hover {
+  text-decoration: underline;
+}
+
+.doc-description {
+  margin: 0;
+  color: var(--color-secondary);
+}

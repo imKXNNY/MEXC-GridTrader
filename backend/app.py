@@ -14,7 +14,14 @@ import pandas as pd
 
 from config import logger
 from src.grid_backtester import GridBacktester
-from src.results_storage import save_simulation_result, get_all_simulation_results, get_simulation_result_by_timestamp
+from src.results_storage import (
+    save_simulation_result, 
+    get_all_simulation_results, 
+    get_simulation_result_by_timestamp,
+    delete_simulation_result,
+    delete_all_simulation_results
+)
+
 from src.api_integration import MEXCExchange
 
 app = Flask(__name__, static_folder='assets')
@@ -248,8 +255,23 @@ def view_doc(doc_name):
                            doc_name=doc_name,
                            doc_content=html_content)
 
+@app.route('/delete_result/<timestamp>', methods=['DELETE'])
+def delete_result(timestamp):
+    """Delete a specific simulation result by timestamp"""
+    success = delete_simulation_result(timestamp)
+    if success:
+        return jsonify({"status": "success", "message": f"Deleted result {timestamp}"})
+    return jsonify({"status": "error", "message": f"Result {timestamp} not found"}), 404
+
+@app.route('/delete_all_results', methods=['DELETE'])
+def delete_all_results():
+    """Delete all simulation results"""
+    count = delete_all_simulation_results()
+    return jsonify({"status": "success", "message": f"Deleted {count} results"})
+
 @app.route('/account_info')
 def account_info():
+
     try:
         api = MEXCExchange()
         return jsonify(api.get_account_info())

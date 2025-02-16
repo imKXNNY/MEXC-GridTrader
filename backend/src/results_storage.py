@@ -69,6 +69,35 @@ def get_all_simulation_results() -> List[Dict[str, Any]]:
     results.sort(key=lambda x: x["timestamp"], reverse=True)
     return results
 
+def delete_simulation_result(timestamp: str) -> bool:
+    """
+    Delete a simulation result by its timestamp.
+
+    :param timestamp: The timestamp string of the result to delete.
+    :return: True if deletion was successful, False if file didn't exist.
+    """
+    filepath = os.path.join(RESULTS_DIR, f"simulation_{timestamp}.json")
+    if os.path.exists(filepath):
+        os.remove(filepath)
+        logger.info(f"Deleted simulation result: {filepath}")
+        return True
+    return False
+
+def delete_all_simulation_results() -> int:
+    """
+    Delete all simulation results in the results directory.
+
+    :return: Number of files deleted.
+    """
+    count = 0
+    for filename in os.listdir(RESULTS_DIR):
+        if filename.endswith(".json"):
+            filepath = os.path.join(RESULTS_DIR, filename)
+            os.remove(filepath)
+            count += 1
+            logger.info(f"Deleted simulation result: {filepath}")
+    return count
+
 def get_simulation_result_by_timestamp(ts: str) -> Optional[Dict[str, Any]]:
     """
     Retrieve a single simulation result by its timestamp.
