@@ -5,7 +5,7 @@ import time
 from typing import Dict, Any, List, Optional
 import pandas as pd
 
-from src.metrics import calculate_advanced_metrics
+
 from config import logger, RESULTS_DIR
 
 if not os.path.exists(RESULTS_DIR):
@@ -18,16 +18,14 @@ def save_simulation_result(
     candle_data: Optional[pd.DataFrame] = None
 ) -> str:
 
-    initial_capital = params.get("initial_capital", 10000)
-    metrics = calculate_advanced_metrics(orders, initial_capital, final_value)
-
     result = {
         "timestamp": int(time.time()),
         "params": params,
         "orders": orders,
         "final_value": final_value,
-        "metrics": metrics
+        "metrics": params.get("metrics", {})
     }
+
 
     # Convert candle_data to JSON
     if candle_data is not None and not candle_data.empty:
@@ -38,9 +36,10 @@ def save_simulation_result(
 
     # Store initial and final equity values
     result["equity"] = {
-        "initial": initial_capital,
+        "initial": params.get("initial_capital", 10000),
         "final": final_value
     }
+
 
 
     filename = os.path.join(RESULTS_DIR, f"simulation_{result['timestamp']}.json")

@@ -1,7 +1,126 @@
 import backtrader as bt
 from typing import List, Dict, Any
+from config import logger
+
+class MomentumTrendStrategy(bt.Strategy):
+    params = (
+        ('ema_short', 50),
+        ('ema_long', 200),
+        ('rsi_length', 14),
+        ('stoch_length', 14),      # Used for the RSI period inside Stoch RSI
+        ('k_period', 3),           # Smoothing for the %K line
+        ('d_period', 3),           # Smoothing for the %D line
+        ('di_len', 14),
+        ('adx_smoothing', 14),
+        ('stop_loss_perc', 1.0),
+        ('take_profit_perc', 3.0),
+    )
+
+    def __init__(self):
+        # ---------- EMAs ----------
+        self.ema_short = bt.indicators.EMA(self.data.close, period=self.p.ema_short)
+        self.ema_long = bt.indicators.EMA(self.data.close, period=self.p.ema_long)
+
+        # ---------- RSI ----------
+        self.rsi = bt.indicators.RSI(self.data.close, period=self.p.rsi_length)
+        
+        # ---------- Standard Stoch ----------
+        # ---------- Highest/Lowest of H/L over stoch_length ----------
+        self.lowest_low = bt.ind.Lowest(self.data.low, period=self.p.stoch_length)
+        self.highest_high = bt.ind.Highest(self.data.high, period=self.p.stoch_length)
+
+        # ---------- %K and %D ----------
+        stoch_k_raw = (self.data.close - self.lowest_low) / \
+                      (self.highest_high - self.lowest_low + 1e-9) * 100
+
+        self.stoch_k = bt.indicators.SMA(stoch_k_raw, period=self.p.k_period)
+        self.stoch_d = bt.indicators.SMA(self.stoch_k,   period=self.p.d_period)
+        
+        # ---------- ADX ----------
+        self.adx = bt.indicators.AverageDirectionalMovementIndex(
+            period=self.p.di_len,
+            movav=bt.indicators.SMA
+        )
+
+        # Initialize state
+        self.orders = []
+        self.position_size = 0
+        self.position_cost = 0
+
+    def next(self):
+        try:
+            # Skip if indicators aren't ready
+            min_bars_required = max(self.p.ema_long, self.p.stoch_length, self.p.rsi_length)
+            if len(self.data) < min_bars_required:
+                logger.debug(f"Skipping - Need {min_bars_required} bars, have {len(self.data)}")
+                return
+
+            if not all([
+                len(self.ema_short) > 0,
+                len(self.ema_long) > 0,
+                len(self.stoch_k) > 0,
+                len(self.stoch_d) > 0,
+                len(self.adx) > 0,
+                len(self.rsi) > 0
+            ]):
+                logger.debug("Skipping - Missing indicator data")
+                return
+        except Exception as e:
+            logger.error(f"Error in MomentumTrendStrategy.next(): {str(e)}")
+            return
+
+        # ---------- Calculate Conditions ----------
+        # Trend check
+        bullish_trend = (self.ema_short[0] > self.ema_long[0]) and (self.data.close[0] > self.ema_long[0])
+        
+        # RSI filter
+        rsi_ok = 40 < self.rsi[0] < 70
+        
+        # Stoch RSI cross-up: %K > %D and %K < 20
+        stoch_cross_up = (self.stoch_k[0] > self.stoch_d[0])
+        stoch_ok = (self.stoch_k[0] < 20)
+        
+        # ADX check
+        adx_ok = (self.adx[0] > 17)
+
+        # ---------- Entry Condition ----------
+        if not self.position and bullish_trend and rsi_ok and stoch_cross_up and stoch_ok and adx_ok:
+            self.enter_position()
+
+        # ---------- Exit Condition ----------
+        if self.position:
+            # Example: exit if RSI > 80 or short EMA < long EMA
+            if self.rsi[0] > 80 or self.ema_short[0] < self.ema_long[0]:
+                self.close()
+
+    def enter_position(self):
+        """
+        Buy a position sized so that if price hits stop_loss, you lose ~`stop_loss_perc`% of your account.
+        """
+        # Calculate position size
+        risk_amount = self.broker.getvalue() * (self.p.stop_loss_perc / 100.0)
+        stop_price = self.data.close[0] * (1 - self.p.stop_loss_perc / 100.0)
+        position_size = risk_amount / max((self.data.close[0] - stop_price), 1e-9)
+        
+        # Place buy order
+        self.buy(size=position_size)
+        
+        # Store position details
+        self.position_size = position_size
+        self.position_cost = position_size * self.data.close[0]
+
+    def notify_trade(self, trade):
+        if trade.isclosed:
+            self.orders.append({
+                "type": "sell" if trade.size < 0 else "buy",
+                "time": str(self.data.datetime.datetime()),
+                "price": trade.price,
+                "size": abs(trade.size),
+                "profit": trade.pnl
+            })
 
 class BoxMacdRsiStrategy(bt.Strategy):
+
     params = (
         ('commission', 0.001),  # Commission per trade (0.1%)
         ('slippage', 0.005),    # Slippage per trade (0.5%)
@@ -67,8 +186,26 @@ class BoxMacdRsiStrategy(bt.Strategy):
         self.position_final_limit = 0
 
     def next(self):
-        # Skip if indicators are not ready
-        if len(self.data) < self.p.box_lookback:
+        try:
+            # Skip if indicators are not ready
+            if len(self.data) < self.p.box_lookback:
+                return
+
+            # Validate indicator values exist
+            if not all([
+                hasattr(self, 'rsi'),
+                hasattr(self, 'macd'),
+                hasattr(self, 'atr'),
+                hasattr(self, 'volatility'),
+                hasattr(self, 'adaptive_pivot')
+            ]):
+                return
+
+            # Check array bounds before accessing
+            if len(self.data.close) == 0 or len(self.rsi) == 0 or len(self.macd.macd) == 0:
+                return
+        except Exception as e:
+            logger.error(f"Error in BoxMacdRsiStrategy.next(): {str(e)}")
             return
 
         # Get current price data

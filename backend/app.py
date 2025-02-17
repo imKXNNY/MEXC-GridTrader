@@ -1,7 +1,10 @@
 import logging
 import os
+import sys
 import markdown2
-from flask import Flask, render_template, request, jsonify  # <-- Corrected import
+from flask import Flask, render_template, request, jsonify
+from flask_cors import CORS
+
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -14,6 +17,7 @@ import pandas as pd
 
 from config import logger
 from src.grid_backtester import GridBacktester
+from src.metrics import calculate_advanced_metrics
 from src.results_storage import (
     save_simulation_result, 
     get_all_simulation_results, 
@@ -25,7 +29,7 @@ from src.results_storage import (
 from src.api_integration import MEXCExchange
 
 app = Flask(__name__, static_folder='assets')
-
+CORS(app, resources={r"/api/*": {"origins": "http://localhost:5173"}})
 
 APP_VERSION = "0.3.0"
 
@@ -271,7 +275,6 @@ def delete_all_results():
 
 @app.route('/account_info')
 def account_info():
-
     try:
         api = MEXCExchange()
         return jsonify(api.get_account_info())
@@ -279,5 +282,54 @@ def account_info():
         logger.error("Account info error: %s", e)
         return jsonify({"error": "Failed to fetch account info"}), 500
 
+@app.route('/api/simulate', methods=['POST'])
+def api_simulate():
+    try:
+        data = request.json
+        symbol = data.get('symbol')
+        interval = data.get('interval')
+        initial_capital = float(data.get('initial_capital'))
+        risk_percent = float(data.get('risk_percent'))
+        rsi_length = int(data.get('rsi_length', 14))
+        macd_fast = int(data.get('macd_fast', 12))
+        macd_slow = int(data.get('macd_slow', 26))
+        macd_signal = int(data.get('macd_signal', 9))
+
+        backtester = GridBacktester(
+            symbol=symbol,
+            interval=interval,
+            initial_capital=initial_capital,
+            risk_percent=risk_percent,
+            strategy_type='momentum',
+            box_params={
+                'rsi_length': rsi_length,
+                'macd_fast': macd_fast,
+                'macd_slow': macd_slow,
+                'macd_signal': macd_signal
+            }
+        )
+
+
+        backtester.fetch_and_store_data()
+        orders, final_value, trade_analysis, drawdown_analysis, sharpe_analysis = backtester.simulate()
+        metrics = calculate_advanced_metrics(orders, initial_capital, final_value)
+        
+        return jsonify({
+            'status': 'success',
+            'final_value': final_value,
+            'orders': orders,
+            'trade_analysis': trade_analysis,
+            'drawdown_analysis': drawdown_analysis,
+            'sharpe_analysis': sharpe_analysis,
+            'metrics': metrics
+        })
+    except Exception as e:
+        logger.error(f"API simulation error: {str(e)}")
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
+
 if __name__ == '__main__':
+
     app.run(debug=True)

@@ -1,10 +1,14 @@
 [tool.poetry]
 name = "mexc-auto-trading-dashboard"
 version = "0.3.1"
-description = "Backend for MEXC Auto Trading Dashboard"
+description = "Flask backend for MEXC Auto Trading Dashboard with backtesting and strategy implementation"
 authors = ["imKXNNY <kenny.gueclue@gmail.com>"]
-readme = "../README.md"
+readme = "README.md"
 package-mode = false
+
+[tool.poetry.scripts]
+start = "app:main"
+
 
 [tool.poetry.dependencies]
 python = "^3.12"
@@ -17,6 +21,15 @@ pandas-ta = "^0.3.14b0"
 python-dotenv = "^1.0.1"
 backtrader = "^1.9.78.123"
 markdown2 = "^2.5.3"
+gunicorn = "^21.2.0"
+flask-cors = "^5.0.0"
+
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.3.4"
+pytest-mock = "^3.14.0"
+black = "^24.1.1"
+flake8 = "^6.1.0"
 
 
 [build-system]

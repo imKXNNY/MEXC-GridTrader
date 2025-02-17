@@ -9,9 +9,11 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { path: '/', label: 'Dashboard' },
+  { path: '/backtest', label: 'Backtest' },
   { path: '/docs', label: 'Documentation' },
   { path: '/results', label: 'Results' }
 ];
+
 
 const Navbar: React.FC = () => {
   return (

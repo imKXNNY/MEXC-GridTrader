@@ -31,14 +31,18 @@ class BaseDataHandler:
     def _load_from_csv(self, csv_path: str) -> pd.DataFrame:
         """
         Loads a CSV file into a DataFrame, if it exists.
-        Expects a 'time' column for date parsing.
+        Expects a CSV file with columns: 'time', 'open', 'high', 'low', 'close', 'volume'.
         """
         if not os.path.exists(csv_path):
             return pd.DataFrame()
         try:
-            # Read CSV and try to parse 'time' as datetime
-            df = pd.read_csv(csv_path, parse_dates=['time'])
-            # If for any reason the 'time' column is not datetime, force conversion
+            # Read only the specified columns and parse 'time' as datetime
+            df = pd.read_csv(
+                csv_path,
+                usecols=['time', 'open', 'high', 'low', 'close', 'volume'],
+                parse_dates=['time']
+            )
+            # Ensure the 'time' column is datetime; if not, force conversion
             if not pd.api.types.is_datetime64_any_dtype(df['time']):
                 df['time'] = pd.to_datetime(df['time'], errors='coerce')
             df.sort_values('time', inplace=True)
@@ -68,7 +72,14 @@ class BaseDataHandler:
     ) -> pd.DataFrame:
         """
         Fetch historical OHLCV data from MEXC (via ccxt), with CSV caching and incremental updates.
+        
+        Note: MEXC API has a limitation on historical data availability. For 1h interval,
+        the maximum available data is typically 500 candles (approximately 20 days).
         """
+
+        logger.debug(f"Starting historical data fetch for {symbol} {interval}")
+        logger.debug(f"Start time: {start_time}, End time: {end_time}")
+
 
         csv_path = self._get_csv_path(symbol, interval)
         cached_df = self._load_from_csv(csv_path)
@@ -98,14 +109,22 @@ class BaseDataHandler:
                 break
 
             try:
+                logger.debug(f"Fetching data since {since} with limit 1000")
                 ohlcv = exchange.fetch_ohlcv(symbol, timeframe=interval, since=since, limit=1000)
+                logger.debug(f"Received {len(ohlcv)} rows from exchange")
             except Exception as e:
                 logger.error("Error fetching CCXT data: %s", e)
+                logger.debug("Stack trace:", exc_info=True)
                 break
+
 
             if not ohlcv:
                 logger.info("No additional candles returned from exchange.")
+                if len(all_dfs) == 1 and len(all_dfs[0]) == 500:
+                    logger.warning("Reached maximum historical data limit (500 candles) for %s %s", 
+                                  symbol, interval)
                 break
+
 
             fresh_df = pd.DataFrame(ohlcv, columns=['time', 'open', 'high', 'low', 'close', 'volume'])
             # Convert from milliseconds to datetime
@@ -117,18 +136,20 @@ class BaseDataHandler:
                 fresh_df = fresh_df[fresh_df['time'] <= end_dt]
 
             if fresh_df.empty:
+                logger.debug("No new data received, breaking fetch loop")
                 break
+
 
             logger.info("Fetched %d new candles starting at %s.", len(fresh_df), fresh_df['time'].iloc[0])
 
             all_dfs.append(fresh_df)
             last_ts_ms = int(fresh_df['time'].iloc[-1].value // 10**6)
 
-            if len(fresh_df) < 1000:
-                break
-
         merged = pd.concat(all_dfs, ignore_index=True).drop_duplicates(subset=['time']).sort_values('time')
         merged.reset_index(drop=True, inplace=True)
+        logger.debug(f"Total rows after merge: {len(merged)}")
+        logger.debug(f"Time range: {merged['time'].min()} to {merged['time'].max()}")
+
 
         if not merged.empty:
             self._save_to_csv(merged, csv_path)

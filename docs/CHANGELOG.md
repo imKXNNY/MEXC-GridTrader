@@ -9,12 +9,15 @@ All notable changes to this project will be documented in this file.
 - Docker containerization for both backend and frontend
 - Vite + React + TypeScript + SWC frontend bone-setup
 - Docker Compose orchestration configuration
+- New momentum trend-following strategy implementation
 
 ### Changed
 - Moved Flask backend to dedicated backend directory
 - Updated import paths to reflect new structure
 - Migrated from requirements.txt to Poetry pyproject.toml
 - Updated documentation to reflect new project structure
+- Modified backtester to support both momentum and grid strategies
+
 
 ## [0.3.0] - 2025-02-15
 ### Added

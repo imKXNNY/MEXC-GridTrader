@@ -45,7 +45,9 @@
 - **OHLCV Data Caching** – Efficiently fetch and store candle data, reducing API usage.  
 - **Dynamic Grid Adjustments** – Automatically adjusts grid spacing based on market volatility using ATR and standard deviation.
 - **Adaptive Pivot Logic** – Uses moving averages to dynamically adjust pivot points for grid levels.
+- **Momentum Trend-Following** – Implements EMA crossovers with RSI and Stochastic RSI for trend-following strategies.
 - **Advanced Risk Management** – Includes stop-loss, trailing stops, and position sizing based on volatility.
+
 
 
 ## Roadmap

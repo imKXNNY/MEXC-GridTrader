@@ -1,1 +1,1 @@
-# This package will contain the source code for the Algorithmic Dynamic Grid Trading Bot.
+# Marks this directory as a Python package
