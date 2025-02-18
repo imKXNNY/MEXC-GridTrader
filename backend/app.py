@@ -312,7 +312,6 @@ def api_simulate():
 
         backtester.fetch_and_store_data()
         orders, final_value, trade_analysis, drawdown_analysis, sharpe_analysis = backtester.simulate()
-        metrics = calculate_advanced_metrics(orders, initial_capital, final_value)
         
         return jsonify({
             'status': 'success',
@@ -321,7 +320,6 @@ def api_simulate():
             'trade_analysis': trade_analysis,
             'drawdown_analysis': drawdown_analysis,
             'sharpe_analysis': sharpe_analysis,
-            'metrics': metrics
         })
     except Exception as e:
         logger.error(f"API simulation error: {str(e)}")

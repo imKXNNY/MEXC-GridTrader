@@ -3,15 +3,163 @@ import Navbar from '../components/Navbar';
 import './Backtest.css';
 
 interface Results {
-  metrics: {
-    total_profit: number;
-    num_trades: number;
-    win_rate: number;
-    avg_profit_per_trade: number;
-    max_drawdown: number;
-    sharpe_ratio: number;
-  };
-  orders_chart_html: string;
+  orders: [
+    {
+      price: number;
+      profit: number;
+      size: number;
+      time: string;
+      type: string;
+    }
+  ];
+  drawdown_analysis: {
+      drawdown: number;
+      len: number;
+      moneydown: number;
+      max: {
+        drawdown: number;
+        len: number;
+        moneydown: number;
+      }
+  }
+  trade_analysis: {
+    len: {
+        average: number;
+        long: {
+          average: number;
+          lost: {
+            average: number;
+            max: number;
+            min: number;
+            total: number;
+          };
+          max: number;
+          min: number;
+          total: number;
+          won: {
+            average: number;
+            max: number;
+            min: number;
+            total: number;
+          };
+        };
+        lost: {
+          average: number;
+          max: number;
+          min: number;
+          total: number;
+        };
+        max: number;
+        min: number;
+        short: {
+          average: number;
+          lost: {
+            average: number;
+            max: number;
+            min: number;
+            total: number;
+          };
+          max: number;
+          min: number;
+          total: number;
+          won: {
+            average: number;
+            max: number;
+            min: number;
+            total: number;
+          };
+        };
+        total: number;
+        won: {
+          average: number;
+          max: number;
+          min: number;
+          total: number;
+        };
+      };
+      long: {
+        lost: number;
+        pnl: {
+          average: number;
+          lost: {
+            average: number;
+            max: number;
+            total: number;
+          };
+          total: number;
+          won: {
+            average: number;
+            max: number;
+            total: number;
+          };
+        };
+        total: number;
+        won: number;
+      };
+      lost: {
+        pnl: {
+          average: number;
+          max: number;
+          total: number;
+        };
+        total: number;
+      };
+      pnl: {
+        gross: {
+          average: number;
+          total: number;
+        };
+        net: {
+          average: number;
+          total: number;
+        };
+      };
+      short: {
+        lost: number;
+        pnl: {
+          average: number;
+          lost: {
+            average: number;
+            max: number;
+            total: number;
+          };
+          total: number;
+          won: {
+            average: number;
+            max: number;
+            total: number;
+          };
+        };
+        total: number;
+        won: number;
+      };
+      streak: {
+        lost: {
+          current: number;
+          longest: number;
+        };
+        won: {
+          current: number;
+          longest: number;
+        };
+      };
+      total: {
+        closed: number;
+        open: number;
+        total: number;
+      };
+      won: {
+        pnl: {
+          average: number;
+          max: number;
+          total: number;
+        };
+        total: number;
+      };
+  }
+  sharpe_analysis: {
+    sharperatio: number;
+  }
 }
 
 const Backtest: React.FC = () => {
@@ -25,27 +173,42 @@ const Backtest: React.FC = () => {
     const [macdSignal, setMacdSignal] = useState(9);
     const [results, setResults] = useState<Results | null>(null);
 
+    const [fetchingResults, setFetchingResults] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        const response = await fetch('http://127.0.0.1:5000/api/simulate', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                symbol,
-                interval,
-                initial_capital: initialCapital,
-                risk_percent: riskPercent,
-            }),
-        });
+        setError(null);
+        setFetchingResults(true);
+        try {
+            const response = await fetch('http://127.0.0.1:5000/api/simulate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    symbol,
+                    interval,
+                    initial_capital: initialCapital,
+                    risk_percent: riskPercent,
+                }),
+            });
 
-        if (response.ok) {
-            const data = await response.json();
-            setResults(data);
-            console.log('Backtest result:', data);
-        } else {
-            console.error('Error during backtest');
+            if (response.ok) {
+                const data = await response.json();
+                setResults(data);
+                console.log('Backtest result:', data);
+            } else {
+                throw new Error('Error during backtest');
+            }
+        } catch (error) {
+            if (error instanceof Error) {
+                setError('Failed: ' + error.message);
+            } else {
+                setError('Failed: An unknown error occurred');
+            }
+        } finally {
+            setFetchingResults(false);
         }
     };
 
@@ -113,37 +276,72 @@ const Backtest: React.FC = () => {
                 <button className="submit-button" type="submit">Run Backtest</button>
             </form>
 
-            {results && (
+            {error && <p style={{ color: 'red' }}>{error}</p>}
+
+            {fetchingResults && <div className="backtest-loading"><p>Loading...</p></div> || results && (
                 <div className="backtest-results">
-                    <h2 style={{ marginTop: 0 }}>Simulation Metrics</h2>
-                    <div className="metrics-grid">
-                        <div className="metric-card">
-                            <span className="metric-label">Total Profit:</span>
-                            <span className="metric-value">${results.metrics.total_profit.toFixed(2)}</span>
-                        </div>
-                        <div className="metric-card">
-                            <span className="metric-label">Trades:</span>
-                            <span className="metric-value">{results.metrics.num_trades}</span>
-                        </div>
-                        <div className="metric-card">
-                            <span className="metric-label">Win Rate:</span>
-                            <span className="metric-value">{(results.metrics.win_rate * 100).toFixed(2)}%</span>
-                        </div>
-                        <div className="metric-card">
-                            <span className="metric-label">Avg Profit/Trade:</span>
-                            <span className="metric-value">${results.metrics.avg_profit_per_trade.toFixed(2)}</span>
-                        </div>
-                        <div className="metric-card">
-                            <span className="metric-label">Max Drawdown:</span>
-                            <span className="metric-value">{(results.metrics.max_drawdown * 100).toFixed(2)}%</span>
-                        </div>
-                        <div className="metric-card">
-                            <span className="metric-label">Sharpe Ratio:</span>
-                            <span className="metric-value">{results.metrics.sharpe_ratio.toFixed(2)}</span>
+                    <div className='backtest-metrics'>
+                        <h2 style={{ marginTop: 0 }}>Simulation Metrics</h2>
+                        <div className="metrics-grid">
+                            <div className="metric-card">
+                                <span className="metric-label">Total Profit:</span>
+                                <span className="metric-value">${results.trade_analysis.pnl.net.total.toFixed(2)}</span>
+                            </div>
+                            <div className="metric-card">
+                                <span className="metric-label">Trades:</span>
+                                <span className="metric-value">{results.trade_analysis.total.total}</span>
+                            </div>
+                            <div className="metric-card">
+                                <span className="metric-label">Win Rate:</span>
+                                <span className="metric-value">{(results.trade_analysis.won.total / results.trade_analysis.total.total * 100).toFixed(2)}%</span>
+                            </div>
+                            <div className="metric-card">
+                                <span className="metric-label">Avg Profit/Trade:</span>
+                                <span className="metric-value">${results.trade_analysis.pnl.net.average.toFixed(2)}</span>
+                            </div>
+                            <div className="metric-card">
+                                <span className="metric-label">Max Drawdown:</span>
+                                <span className="metric-value">{(results.drawdown_analysis.drawdown).toFixed(2)}%</span>
+                            </div>
+                            <div className="metric-card">
+                                <span className="metric-label">Sharpe Ratio:</span>
+                                <span className="metric-value">{results.sharpe_analysis.sharperatio.toFixed(2)}</span>
+                            </div>
                         </div>
                     </div>
 
-                    <div className="orders-chart" dangerouslySetInnerHTML={{ __html: results.orders_chart_html }} />
+                    <div className="backtest-orders">
+                        <div className="title-container">
+                            <h2 style={{ marginTop: 0 }}>Trade Orders </h2>
+                            <div className="actions">
+                                <button disabled>Download</button>
+                                <button disabled>Save</button>
+                            </div>
+                        </div>
+                        
+                        <table className="order-table">
+                            <thead>
+                                <tr>
+                                    <th className="border px-4 py-2">Time</th>
+                                    <th className="border px-4 py-2">Type</th>
+                                    <th className="border px-4 py-2">Price</th>
+                                    <th className="border px-4 py-2">Size</th>
+                                    <th className="border px-4 py-2">Profit</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {results.orders.sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime()).map((order, i) => (
+                                    <tr key={i}>
+                                        <td className="border px-4 py-2">{order.time}</td>
+                                        <td className="border px-4 py-2">{order.type.toUpperCase()}</td>
+                                        <td className="border px-4 py-2">{order.price}&nbsp;$</td>
+                                        <td className="border px-4 py-2">{order.size}</td>
+                                        <td className="border px-4 py-2">{order.profit.toFixed(2)}&nbsp;$</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             )}
         </div>

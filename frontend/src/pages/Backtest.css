@@ -42,12 +42,22 @@
   background-color: var(--color-info);
 }
 
+.backtest-loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 200px;
+}
+
 .backtest-results {
   background-color: var(--color-dark);
   padding: var(--spacing-medium);
   border-radius: 4px;
-  margin-top: var(--spacing-small);
+  margin-block: var(--spacing-small);
   margin: var(--spacing-medium);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-medium);
 }
 
 .metrics-grid {
@@ -57,11 +67,13 @@
   margin-top: var(--spacing-medium);
 }
 
-.metric-card {
+.metric-card, .backtest-orders {
   background-color: rgba(255, 255, 255, 0.25);
   padding: var(--spacing-medium);
   border-radius: 4px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  max-height: 80dvh;
+  overflow-y: auto;
 }
 
 .metric-label {
@@ -75,6 +87,49 @@
   font-size: 1.2em;
   margin-top: var(--spacing-small);
   display: block;
+}
+
+.order-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: var(--spacing-medium);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.order-table th {
+  padding: var(--spacing-small);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.25);
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+.order-table td {
+  padding: var(--spacing-small);
+  border-bottom: 0.5px solid rgba(255, 255, 255, 0.25);
+  background-color: rgba(0, 0, 0, 0.25);
+}
+
+.order-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.order-table tbody tr:nth-child(even) td {
+  background-color: rgba(0, 0, 0, 0.35);
+}
+
+.backtest-orders .title-container {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.backtest-orders .title-container .actions {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  gap: var(--spacing-small);
 }
 
 @media (max-width: 768px) {
