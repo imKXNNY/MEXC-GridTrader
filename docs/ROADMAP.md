@@ -38,12 +38,11 @@
 - [ ] Add monitoring and alerting
 
 ## Future Considerations
-- Evaluate need for Next.js migration
-- Plan for potential Node.js backend transition
 - Monitor performance and complexity
 - Maintain flexibility for future changes
 
 ## Recent Accomplishments
+- Centralized theme and unified styling
 - Project structure refactoring
 - Docker containerization
 - Momentum strategy implementation

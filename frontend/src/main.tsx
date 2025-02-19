@@ -1,11 +1,12 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { ThemeProvider } from '@theme/ThemeProvider';
+import { ThemeProvider } from './theme/ThemeProvider';
 import Dashboard from './pages/Dashboard';
-import DocsViewer from './pages/DocsViewer';
-import ResultDetail from './pages/ResultDetail';
 import Backtest from './pages/Backtest';
+import ResultDetail from './pages/ResultDetail';
+import DocsViewer from './pages/DocsViewer';
+import ThemeSwitcher from './components/ThemeSwitcher';
 import './index.css';
 
 const styleElement = document.createElement('style');
@@ -17,11 +18,13 @@ createRoot(document.getElementById('root')!).render(
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Dashboard />} />
-          <Route path="/docs" element={<DocsViewer />} />
           <Route path="/backtest" element={<Backtest />} />
+          <Route path="/docs" element={<DocsViewer />} />
           <Route path="/results/:id" element={<ResultDetail />} />
         </Routes>
+        <ThemeSwitcher />
       </BrowserRouter>
     </ThemeProvider>
+
   </StrictMode>
 );

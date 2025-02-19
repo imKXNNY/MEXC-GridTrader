@@ -34,14 +34,14 @@
 
 ### **Core UI/UX Enhancements**
 - **Modern Layout & Theming**  
-  - [ ] Adopt and integrate more comprehensive UI kit (e.g. Tailwind components, Bootstrap, Material, etc.).  
+  - [x] Adopt and integrate more comprehensive UI kit (e.g. Tailwind components, Bootstrap, Material, etc.).  
   - [x] Use a consistent color scheme and typography that reflects a "trading/analytical" vibe.
-  - [ ] Create, enhance & utilize centralized theming for styling of components and pages.   
+  - [x] Create, enhance & utilize centralized theming for styling of components and pages.   
   - [ ] Break the single-page forms into multiple sections or a wizard if there are many parameters.
 
 - **Responsive & Mobile-Friendly**  
-  - [ ] Verify that all pages scale gracefully on various screen sizes (phones, tablets, desktop).  
-  - [x] Add responsive navigation (hamburger menu, collapsible sidebars) if needed.
+  - [x] Verify that all pages scale gracefully on various screen sizes (phones, tablets, desktop).  
+  - [ ] Add responsive navigation (hamburger menu, collapsible sidebars) if needed.
 
 ### **Backtest Management**
 - **Renaming & Notes**  

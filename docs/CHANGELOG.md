@@ -6,6 +6,8 @@
 - Parameter organization and tooltips in backtest form
 - Candlestick charts with volume overlay in basic backtest template
 - Enhanced backtest management features (renaming, notes, archiving)
+- Improved centralized theme and replaced default components styles with proper UI-kits (MUI + TailwindCSS)
+- Improved Responsivness through proper use of central theme and new UI-Kit components
 
 ### Changed
 - Improved UI consistency across all components

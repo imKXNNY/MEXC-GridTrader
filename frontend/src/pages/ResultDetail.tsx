@@ -1,6 +1,9 @@
 import React from 'react';
 import Navbar from '@components/Navbar';
-import './ResultDetail.css';
+import Container from '@mui/material/Container';
+import Paper from '@mui/material/Paper';
+import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';
 
 interface TradeResult {
   id: string;
@@ -18,41 +21,64 @@ const ResultDetail: React.FC = () => {
     profit: 150.25,
     duration: '2h 15m',
     strategy: 'Grid Trading',
-    timestamp: '2023-10-15 14:30:00'
+    timestamp: '2023-10-15 14:30:00',
   };
 
+  const infoRows = [
+    { label: 'Trade ID:', value: result.id },
+    { label: 'Pair:', value: result.pair },
+    { label: 'Profit:', value: `$${result.profit.toFixed(2)}` },
+    { label: 'Duration:', value: result.duration },
+    { label: 'Strategy:', value: result.strategy },
+    { label: 'Timestamp:', value: result.timestamp },
+  ];
+
   return (
-    <div className="result-detail">
+    <div className="flex flex-col min-h-screen pt-10" style={{ backgroundColor: 'var(--color-background)' }}>
       <Navbar />
-      <main className="result-content container">
-        <h1>Trade Result Details</h1>
-        <div className="result-info">
-          <div className="info-row">
-            <span className="info-label">Trade ID:</span>
-            <span className="info-value">{result.id}</span>
-          </div>
-          <div className="info-row">
-            <span className="info-label">Pair:</span>
-            <span className="info-value">{result.pair}</span>
-          </div>
-          <div className="info-row">
-            <span className="info-label">Profit:</span>
-            <span className="info-value">${result.profit.toFixed(2)}</span>
-          </div>
-          <div className="info-row">
-            <span className="info-label">Duration:</span>
-            <span className="info-value">{result.duration}</span>
-          </div>
-          <div className="info-row">
-            <span className="info-label">Strategy:</span>
-            <span className="info-value">{result.strategy}</span>
-          </div>
-          <div className="info-row">
-            <span className="info-label">Timestamp:</span>
-            <span className="info-value">{result.timestamp}</span>
-          </div>
-        </div>
-      </main>
+      <Container maxWidth="sm" className="flex-1 py-8 px-4">
+        <Typography
+          variant="h3"
+          component="h1"
+          className="mb-8 font-bold"
+          sx={{ color: 'var(--color-primary)' }}
+        >
+          Trade Result Details
+        </Typography>
+        <Paper
+          elevation={3}
+          className="p-6 rounded-lg"
+          sx={{
+            backgroundColor: 'white',
+            boxShadow: 'var(--shadow-medium)',
+          }}
+        >
+          <Box className="space-y-4">
+            {infoRows.map((row, index) => (
+              <Box
+                key={index}
+                className="flex flex-col md:flex-row justify-between py-2 border-b last:border-b-0"
+                sx={{ borderColor: 'var(--color-border, #e0e0e0)' }}
+              >
+                <Typography
+                  variant="body1"
+                  className="font-medium"
+                  sx={{ color: 'var(--color-secondary)' }}
+                >
+                  {row.label}
+                </Typography>
+                <Typography
+                  variant="body1"
+                  className="font-bold"
+                  sx={{ color: 'var(--color-primary)' }}
+                >
+                  {row.value}
+                </Typography>
+              </Box>
+            ))}
+          </Box>
+        </Paper>
+      </Container>
     </div>
   );
 };
