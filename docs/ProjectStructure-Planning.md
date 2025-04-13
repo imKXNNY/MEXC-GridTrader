@@ -1,7 +1,7 @@
-# **Revised Project Structure (with Poetry & Docker)**
+# **TradeSage Project Structure (with Poetry & Docker)**
 
 ```
-MEXCGridTradingBot/
+TradeSage/
 ├── backend/
 │   ├── pyproject.toml         # Poetry configuration & metadata
 │   ├── poetry.lock            # Generated lock file for consistent dependencies
@@ -61,43 +61,43 @@ MEXCGridTradingBot/
 
 ## **Key Points in This Structure**
 
-1. **`backend/`**  
-   - Contains **Flask / FastAPI** (or other Python-based) backend.  
-   - `pyproject.toml` & `poetry.lock` handle dependency management via [**Poetry**](https://python-poetry.org/).  
-   - `app.py` is your main entry point; `src/` for core modules like data handlers, strategies, integrations.  
+1. **`backend/`**
+   - Contains **Flask / FastAPI** (or other Python-based) backend.
+   - `pyproject.toml` & `poetry.lock` handle dependency management via [**Poetry**](https://python-poetry.org/).
+   - `app.py` is your main entry point; `src/` for core modules like data handlers, strategies, integrations.
    - **`Dockerfile`** allows building a Docker image for the backend.
 
-2. **`config/`**  
-   - **Optional** but recommended for environment-specific configurations (e.g., dev vs. prod settings).  
+2. **`config/`**
+   - **Optional** but recommended for environment-specific configurations (e.g., dev vs. prod settings).
    - `dev_config.py`, `prod_config.py`, `test_config.py` can hold environment-specific constants or flags.
 
-3. **`tests/`**  
-   - All **unit**, **integration**, and **end-to-end** tests under one folder.  
-   - Structure mirrors `src/` for easier navigation and clarity.  
+3. **`tests/`**
+   - All **unit**, **integration**, and **end-to-end** tests under one folder.
+   - Structure mirrors `src/` for easier navigation and clarity.
    - `pytest` or `unittest` can discover tests recursively here.
 
-4. **`frontend/`**  
-   - A **React**-based frontend (or whichever framework you choose) in its own folder.  
-   - Has its own **`package.json`** for JavaScript dependencies.  
+4. **`frontend/`**
+   - A **React**-based frontend (or whichever framework you choose) in its own folder.
+   - Has its own **`package.json`** for JavaScript dependencies.
    - **`Dockerfile`** for containerizing the frontend if you want to deploy it independently.
 
-5. **`docs/`**  
-   - Houses documentation files (e.g., `CHANGELOG.md`, `CONTRIBUTING.md`, roadmaps, diagrams).  
+5. **`docs/`**
+   - Houses documentation files (e.g., `CHANGELOG.md`, `CONTRIBUTING.md`, roadmaps, diagrams).
    - Good practice to keep architecture diagrams, usage guides, and any design decisions in one place.
 
-6. **`assets/`**  
+6. **`assets/`**
    - Static assets (images, icons, CSS) used by both the documentation and the frontend application.
 
-7. **Environment Files**  
-   - `.env.example` for sample environment variables.  
+7. **Environment Files**
+   - `.env.example` for sample environment variables.
    - Always ensure **`.env` is listed in `.gitignore`** to avoid committing credentials.
 
-8. **Large or Temporary Files**  
-   - Keep caches, logs, or large data sets out of version control.  
+8. **Large or Temporary Files**
+   - Keep caches, logs, or large data sets out of version control.
    - Only commit essential scripts or references.
 
-9. **`docker-compose.yml`**  
-   - Orchestrates how the **backend** and **frontend** containers (and any databases or additional services) interact.  
+9. **`docker-compose.yml`**
+   - Orchestrates how the **backend** and **frontend** containers (and any databases or additional services) interact.
    - Simplifies spinning up the entire stack with a single command (`docker-compose up`).
 
 ---
@@ -116,11 +116,11 @@ MEXCGridTradingBot/
   poetry add requests
   ```
 - **Locking & Install**:
-  - `poetry.lock` is automatically created/updated for consistent dependencies.  
+  - `poetry.lock` is automatically created/updated for consistent dependencies.
   - Run `poetry install` to install all dependencies defined in `pyproject.toml`.
 
 ### 2. **Configuration & Environment Switching**
-- Define environment variables in `.env` or inside `config/dev_config.py` and `config/prod_config.py`.  
+- Define environment variables in `.env` or inside `config/dev_config.py` and `config/prod_config.py`.
 - Example usage:
   ```python
   from config.dev_config import DevConfig
@@ -181,17 +181,17 @@ MEXCGridTradingBot/
 - **Usage**: `docker-compose up --build` to spin up both containers in tandem.
 
 ### 4. **Testing & CI**
-- With Poetry:  
+- With Poetry:
   ```bash
   poetry run pytest tests/
   ```
 - Integrate into GitHub Actions or GitLab CI to automate:
-  1. **Install** dependencies via Poetry.  
-  2. **Run** the test suite (`poetry run pytest`).  
+  1. **Install** dependencies via Poetry.
+  2. **Run** the test suite (`poetry run pytest`).
   3. **Build** and test the frontend if applicable.
 
 ### 5. **Documentation & Contribution Guidelines**
-- Keep your **`CONTRIBUTING.md`** up to date with instructions on how to install Poetry, build Docker containers, and run tests.  
+- Keep your **`CONTRIBUTING.md`** up to date with instructions on how to install Poetry, build Docker containers, and run tests.
 - Maintain the **`CHANGELOG.md`** for versioning info and release notes.
 
 ---
@@ -199,11 +199,11 @@ MEXCGridTradingBot/
 ## **Summary**
 
 By adopting **Poetry** for dependency management:
-- You gain **version-locking** via `poetry.lock`, ensuring reproducible environments across your team.  
+- You gain **version-locking** via `poetry.lock`, ensuring reproducible environments across your team.
 - Dependencies are easier to maintain, add, or remove.
 
 By **Dockerizing** the backend and frontend:
-- You can deploy each service independently or together via **docker-compose**.  
+- You can deploy each service independently or together via **docker-compose**.
 - New developers can spin up the entire project quickly, sidestepping “works on my machine” issues.
 
 This structure and workflow keep your project **testable**, **scalable**, and **deployable**, providing a strong foundation for ongoing development and growth.

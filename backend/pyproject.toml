@@ -1,7 +1,7 @@
 [tool.poetry]
-name = "mexc-auto-trading-dashboard"
-version = "0.3.1"
-description = "Flask backend for MEXC Auto Trading Dashboard with backtesting and strategy implementation"
+name = "tradesage"
+version = "1.0.0"
+description = "Flask backend for TradeSage - Advanced Crypto Trading Platform with backtesting and strategy implementation"
 authors = ["imKXNNY <kenny.gueclue@gmail.com>"]
 readme = "README.md"
 package-mode = false
@@ -23,6 +23,10 @@ backtrader = "^1.9.78.123"
 markdown2 = "^2.5.3"
 gunicorn = "^21.2.0"
 flask-cors = "^5.0.0"
+websocket-client = "^1.8.0"
+google = "^3.0.0"
+protobuf = "^5.29.3"
+pytz = "^2025.1"
 
 
 [tool.poetry.group.dev.dependencies]

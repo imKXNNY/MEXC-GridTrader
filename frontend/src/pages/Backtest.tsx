@@ -1,5 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar';
+import StrategyParameters from '../components/StrategyParameters';
+import BacktestManagement from '../components/BacktestManagement';
+import CandlestickChart from '../components/CandlestickChart';
 import Container from '@mui/material/Container';
 import Box from '@mui/material/Box';
 import Paper from '@mui/material/Paper';
@@ -17,6 +20,7 @@ import TableCell from '@mui/material/TableCell';
 import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
+import Divider from '@mui/material/Divider';
 
 interface Order {
   price: number;
@@ -26,8 +30,18 @@ interface Order {
   type: string;
 }
 
+interface CandleData {
+  time: string;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  volume?: number;
+}
+
 interface Results {
   orders: Order[];
+  candles?: CandleData[];
   drawdown_analysis: {
     drawdown: number;
     len: number;
@@ -176,42 +190,131 @@ interface Results {
   sharpe_analysis: {
     sharperatio: number;
   };
+  final_value: number;
 }
 
 const Backtest: React.FC = () => {
+  // Basic parameters
   const [symbol, setSymbol] = useState('BTCUSDT');
   const [interval, setInterval] = useState('1h');
   const [initialCapital, setInitialCapital] = useState(10000);
   const [riskPercent, setRiskPercent] = useState(1.0);
+  const [strategy, setStrategy] = useState('momentum');
+
+  // Momentum strategy parameters
   const [rsiLength, setRsiLength] = useState(14);
   const [macdFast, setMacdFast] = useState(12);
   const [macdSlow, setMacdSlow] = useState(26);
   const [macdSignal, setMacdSignal] = useState(9);
+
+  // Inside Bar strategy parameters
+  const [minInsideBarSize, setMinInsideBarSize] = useState(0.5);
+  const [useTrendFilter, setUseTrendFilter] = useState(true);
+  const [useVolumeFilter, setUseVolumeFilter] = useState(true);
+  const [volMultiplier, setVolMultiplier] = useState(1.1);
+  const [useATRTP, setUseATRTP] = useState(true);
+  const [atrLength, setAtrLength] = useState(14);
+  const [atrMult, setAtrMult] = useState(1.5);
+  const [rrRatio, setRrRatio] = useState(2.5);
+
+  // UI state
   const [results, setResults] = useState<Results | null>(null);
   const [fetchingResults, setFetchingResults] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [mockCandles, setMockCandles] = useState<CandleData[]>([]);
+
+  // Generate mock candle data for testing the chart
+  useEffect(() => {
+    // This is just for demo purposes - in a real app, you'd get this data from the API
+    const generateMockCandles = () => {
+      const now = new Date();
+      const candles: CandleData[] = [];
+
+      for (let i = 0; i < 100; i++) {
+        const date = new Date(now.getTime() - (99 - i) * 3600000);
+        const basePrice = 50000 + Math.random() * 5000;
+        const volatility = 500;
+
+        const open = basePrice + (Math.random() - 0.5) * volatility;
+        const close = open + (Math.random() - 0.5) * volatility;
+        const high = Math.max(open, close) + Math.random() * volatility / 2;
+        const low = Math.min(open, close) - Math.random() * volatility / 2;
+        const volume = Math.floor(Math.random() * 100) + 50;
+
+        candles.push({
+          time: date.toISOString(),
+          open,
+          high,
+          low,
+          close,
+          volume
+        });
+      }
+
+      return candles;
+    };
+
+    setMockCandles(generateMockCandles());
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setFetchingResults(true);
     try {
-      const response = await fetch('http://127.0.0.1:5000/api/simulate', {
+      // Determine the API endpoint based on the selected strategy
+      const endpoint = strategy === 'ib_price_action'
+        ? 'http://127.0.0.1:5000/api/backtest/ib_strategy'
+        : 'http://127.0.0.1:5000/api/simulate';
+
+      // Prepare request body based on strategy
+      let requestBody: any = {
+        symbol,
+        interval,
+        initial_capital: initialCapital,
+        risk_percent: riskPercent,
+        strategy_type: strategy
+      };
+
+      // Add strategy-specific parameters
+      if (strategy === 'momentum') {
+        requestBody = {
+          ...requestBody,
+          rsi_length: rsiLength,
+          macd_fast: macdFast,
+          macd_slow: macdSlow,
+          macd_signal: macdSignal
+        };
+      } else if (strategy === 'ib_price_action') {
+        requestBody = {
+          ...requestBody,
+          minInsideBarSize,
+          useTrendFilter,
+          useVolumeFilter,
+          volMultiplier,
+          useATRTP,
+          atrLength,
+          atrMult,
+          rr_ratio: rrRatio
+        };
+      }
+
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-          symbol,
-          interval,
-          initial_capital: initialCapital,
-          risk_percent: riskPercent
-        })
+        body: JSON.stringify(requestBody)
       });
 
       if (response.ok) {
         const data = await response.json();
-        setResults(data);
+        // Add mock candles to the results for testing the chart
+        // In a real implementation, the backend would return the actual candles
+        setResults({
+          ...data,
+          candles: mockCandles
+        });
         console.log('Backtest result:', data);
       } else {
         throw new Error('Error during backtest');
@@ -282,6 +385,23 @@ const Backtest: React.FC = () => {
                 </FormControl>
               </Grid>
               <Grid item xs={12} sm={6}>
+                <FormControl fullWidth variant="outlined" required>
+                  <InputLabel sx={{ color: 'var(--color-text)' }}>Strategy</InputLabel>
+                  <Select
+                    value={strategy}
+                    onChange={(e) => setStrategy(e.target.value)}
+                    label="Strategy"
+                    sx={{
+                      '& .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--color-secondary)' },
+                      color: 'var(--color-text)'
+                    }}
+                  >
+                    <MenuItem value="momentum">Momentum</MenuItem>
+                    <MenuItem value="ib_price_action">Inside Bar</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+              <Grid item xs={12} sm={6}>
                 <TextField
                   label="Initial Capital"
                   type="number"
@@ -319,79 +439,31 @@ const Backtest: React.FC = () => {
                   }}
                 />
               </Grid>
-              <Grid item xs={12} sm={4}>
-                <TextField
-                  label="RSI Length"
-                  type="number"
-                  value={rsiLength}
-                  onChange={(e) => setRsiLength(Number(e.target.value))}
-                  required
-                  fullWidth
-                  variant="outlined"
-                  InputProps={{ inputProps: { min: 1, max: 100 } }}
-                  InputLabelProps={{ style: { color: 'var(--color-text)' } }}
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      '& fieldset': { borderColor: 'var(--color-secondary)' },
-                      color: 'var(--color-text)'
-                    }
-                  }}
-                />
+
+              {/* Divider between common and strategy-specific parameters */}
+              <Grid item xs={12}>
+                <Divider sx={{ my: 2, borderColor: 'var(--color-secondary)' }} />
               </Grid>
-              <Grid item xs={12} sm={4}>
-                <TextField
-                  label="MACD Fast"
-                  type="number"
-                  value={macdFast}
-                  onChange={(e) => setMacdFast(Number(e.target.value))}
-                  required
-                  fullWidth
-                  variant="outlined"
-                  InputProps={{ inputProps: { min: 1, max: 100 } }}
-                  InputLabelProps={{ style: { color: 'var(--color-text)' } }}
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      '& fieldset': { borderColor: 'var(--color-secondary)' },
-                      color: 'var(--color-text)'
-                    }
+
+              {/* Dynamic Strategy Parameters */}
+              <Grid item xs={12}>
+                <StrategyParameters
+                  strategy={strategy}
+                  momentumParams={{
+                    rsiLength, setRsiLength,
+                    macdFast, setMacdFast,
+                    macdSlow, setMacdSlow,
+                    macdSignal, setMacdSignal
                   }}
-                />
-              </Grid>
-              <Grid item xs={12} sm={4}>
-                <TextField
-                  label="MACD Slow"
-                  type="number"
-                  value={macdSlow}
-                  onChange={(e) => setMacdSlow(Number(e.target.value))}
-                  required
-                  fullWidth
-                  variant="outlined"
-                  InputProps={{ inputProps: { min: 1, max: 100 } }}
-                  InputLabelProps={{ style: { color: 'var(--color-text)' } }}
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      '& fieldset': { borderColor: 'var(--color-secondary)' },
-                      color: 'var(--color-text)'
-                    }
-                  }}
-                />
-              </Grid>
-              <Grid item xs={12} sm={4}>
-                <TextField
-                  label="MACD Signal"
-                  type="number"
-                  value={macdSignal}
-                  onChange={(e) => setMacdSignal(Number(e.target.value))}
-                  required
-                  fullWidth
-                  variant="outlined"
-                  InputProps={{ inputProps: { min: 1, max: 100 } }}
-                  InputLabelProps={{ style: { color: 'var(--color-text)' } }}
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      '& fieldset': { borderColor: 'var(--color-secondary)' },
-                      color: 'var(--color-text)'
-                    }
+                  insideBarParams={{
+                    minInsideBarSize, setMinInsideBarSize,
+                    useTrendFilter, setUseTrendFilter,
+                    useVolumeFilter, setUseVolumeFilter,
+                    volMultiplier, setVolMultiplier,
+                    useATRTP, setUseATRTP,
+                    atrLength, setAtrLength,
+                    atrMult, setAtrMult,
+                    rrRatio, setRrRatio
                   }}
                 />
               </Grid>
@@ -544,28 +616,56 @@ const Backtest: React.FC = () => {
                 </Grid>
               </Paper>
 
-              {/* Trade Orders */}
+              {/* Price Chart */}
               <Paper className="p-6" elevation={3} sx={{ backgroundColor: 'var(--color-dark)' }}>
+                <Box className="flex justify-between items-center mb-4">
+                  <Typography
+                    variant="h5"
+                    component="h2"
+                    className="font-bold"
+                    sx={{ color: 'var(--color-text)' }}
+                  >
+                    Price Chart
+                  </Typography>
+                  <BacktestManagement
+                    onSave={(name, notes) => {
+                      console.log('Saving backtest:', { name, notes });
+                      // TODO: Implement API call to save backtest
+                    }}
+                    onArchive={() => {
+                      console.log('Archiving backtest');
+                      // TODO: Implement API call to archive backtest
+                    }}
+                    onDelete={() => {
+                      console.log('Deleting backtest');
+                      // TODO: Implement API call to delete backtest
+                    }}
+                  />
+                </Box>
+
+                {/* Candlestick Chart */}
+                {results.candles && (
+                  <CandlestickChart
+                    data={results.candles}
+                    orders={results.orders}
+                    title={`${symbol} - ${interval} - ${strategy.toUpperCase()}`}
+                    height={400}
+                  />
+                )}
+              </Paper>
+
+              {/* Trade Orders */}
+              <Paper className="p-6 mt-6" elevation={3} sx={{ backgroundColor: 'var(--color-dark)' }}>
                 <Box className="flex flex-col gap-4">
-                  <Box className="flex justify-between items-center">
-                    <Typography
-                      variant="h5"
-                      component="h2"
-                      className="font-bold"
-                      sx={{ color: 'var(--color-text)' }}
-                    >
-                      Trade Orders
-                    </Typography>
-                    <Box className="flex gap-2">
-                      <Button variant="outlined" disabled>
-                        Download
-                      </Button>
-                      <Button variant="outlined" disabled>
-                        Save
-                      </Button>
-                    </Box>
-                  </Box>
-                  <TableContainer component={Paper} sx={{ maxHeight: '80vh' }}>
+                  <Typography
+                    variant="h5"
+                    component="h2"
+                    className="font-bold"
+                    sx={{ color: 'var(--color-text)' }}
+                  >
+                    Trade Orders
+                  </Typography>
+                  <TableContainer component={Paper} sx={{ maxHeight: '50vh' }}>
                     <Table stickyHeader>
                       <TableHead>
                         <TableRow>

@@ -1,3 +1,4 @@
+
 # src/grid_backtester.py
 import backtrader as bt
 from typing import Tuple, List, Dict, Any
@@ -5,7 +6,7 @@ import pandas as pd
 
 from config import logger
 from src.data_handler.base_data_handler import BaseDataHandler
-from src.trading_strategy import BoxMacdRsiStrategy, MomentumTrendStrategy
+from src.trading_strategy import BoxMacdRsiStrategy, IntradayMomentumStrategy, IBPriceActionStrategy
 
 class GridBacktester(BaseDataHandler):
     def __init__(
@@ -15,7 +16,7 @@ class GridBacktester(BaseDataHandler):
         initial_capital: float,
         risk_percent: float,
         box_params: Dict[str, Any],
-        strategy_type: str = 'momentum'  # 'momentum' or 'grid'
+        strategy_type: str = 'momentum'  # 'momentum', 'grid', or 'ib_price_action'
     ):
 
         super().__init__()
@@ -37,7 +38,7 @@ class GridBacktester(BaseDataHandler):
         else:
             self.store_data(self.symbol, data)
 
-    def simulate(self):
+    def simulate(self) -> Tuple[List[Dict], float]:
         data = self.get_stored_data(self.symbol)
         if data is None or data.empty:
             raise ValueError("No data to run simulation.")
@@ -63,7 +64,13 @@ class GridBacktester(BaseDataHandler):
                 'stop_loss_perc': self.risk_percent,
                 'take_profit_perc': self.risk_percent * 3  # 3:1 reward ratio
             }
-            cerebro.addstrategy(MomentumTrendStrategy, **strategy_params)
+            cerebro.addstrategy(IntradayMomentumStrategy, **strategy_params)
+        elif self.strategy_type == 'ib_price_action':
+            strategy_params = {
+                'risk_percent': self.risk_percent,
+                **self.box_params
+            }
+            cerebro.addstrategy(IBPriceActionStrategy, **strategy_params)
         else:
             strategy_params = {**self.box_params, 'risk_percent': self.risk_percent}
             cerebro.addstrategy(BoxMacdRsiStrategy, **strategy_params)

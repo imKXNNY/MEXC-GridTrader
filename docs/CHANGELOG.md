@@ -1,4 +1,66 @@
-# CHANGELOG - Updated 2025-02-20
+# CHANGELOG - Updated 2025-05-13
+
+## [1.0.0] - 2025-05-13
+### Changed
+- Rebranded project from "MEXC GridTrader" to "TradeSage"
+- Updated all documentation to reflect new project name
+- Standardized naming conventions across the codebase
+- Improved code organization for better maintainability
+
+## [0.8.0] - 2025-05-13
+### Added
+- Enhanced technical indicators with multiple options (SMA, EMA, RSI, MACD, Bollinger Bands, Stochastic)
+- Zoom and pan functionality for charts with keyboard shortcuts
+- Parameter customization for technical indicators
+- Improved indicator visualization with separate panes for different indicator types
+- Time range selection for quick navigation (1D, 1W, 1M, 1Y, All)
+
+### Changed
+- Refactored indicator calculations for better performance and reliability
+- Enhanced UI for indicator management with edit and remove buttons
+- Improved chart responsiveness and interaction
+- Updated documentation to reflect new features
+
+## [0.7.0] - 2025-05-01
+### Added
+- Strategy optimization with grid search and genetic algorithms
+- Pagination and sorting for backtest results
+- Backtest management API endpoints (save, archive, delete)
+- End-to-end testing with Playwright
+- Component testing for React components
+- Technical indicators in chart visualization
+
+### Changed
+- Improved error handling and loading states
+- Enhanced documentation with testing instructions
+- Refactored frontend code for better maintainability
+- Updated dependencies to latest versions
+
+## [0.6.0] - 2025-04-15
+### Added
+- Dynamic strategy selection UI with strategy-specific parameters
+- Interactive candlestick charts with volume overlay in React frontend
+- Backtest management features (saving, notes, archiving, deletion)
+- Comprehensive error handling and loading states
+- Tooltips for all parameters with explanations
+
+### Changed
+- Improved UI organization with better component structure
+- Enhanced responsive design across all components
+- Updated documentation to reflect new features
+- Optimized chart rendering with lightweight-charts library
+
+## [0.5.0] - 2025-03-10
+### Added
+- Inside Bar Price Action strategy implementation
+- Strategy-specific parameter validation
+- Enhanced error handling in API calls
+- Improved loading states and user feedback
+
+### Changed
+- Refactored strategy implementation for better modularity
+- Updated UI components for better user experience
+- Improved documentation with strategy details
 
 ## [0.4.0] - 2025-02-20
 ### Added

@@ -7,8 +7,9 @@ load_dotenv()  # Reads .env file and makes its contents available via os.environ
 # ------------------------
 # Environment Variables
 # ------------------------
-API_KEY = os.environ.get("MEXC_API_KEY", "YOUR_DEFAULT_KEY")
-API_SECRET = os.environ.get("MEXC_API_SECRET", "YOUR_DEFAULT_SECRET")
+API_KEY = os.environ.get("EXCHANGE_API_KEY", "YOUR_DEFAULT_KEY")
+API_SECRET = os.environ.get("EXCHANGE_SECRET_KEY", "YOUR_DEFAULT_SECRET")
+EXCHANGE_NAME = os.environ.get("EXCHANGE_NAME", "mexc")
 USE_SDK = os.environ.get("USE_SDK", "True").lower() == "true"
 
 # Flask settings

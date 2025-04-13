@@ -4,41 +4,47 @@ from typing import Optional, Dict, Any
 import datetime
 
 # Attempt to import the official MEXC SDK.
+# TODO: Add support for other exchange SDKs as needed
 try:
     from mexc_sdk import Spot  # Official SDK uses Spot class
 except ImportError:
     Spot = None
 
-from config import API_KEY, API_SECRET, USE_SDK, logger
+from config import API_KEY, API_SECRET, USE_SDK, EXCHANGE_NAME, logger
 
-class MEXCExchange:
+class ExchangeAPI:
     """
-    A wrapper for the MEXC API, allowing order creation, cancellation,
-    and retrieval of account/trading data via either ccxt or the official SDK.
+    A wrapper for cryptocurrency exchange APIs, allowing order creation, cancellation,
+    and retrieval of account/trading data via either ccxt or official SDKs when available.
     """
 
     def __init__(
         self,
         api_key: Optional[str] = None,
         api_secret: Optional[str] = None,
+        exchange_name: Optional[str] = None,
         use_sdk: bool = USE_SDK
     ):
         """
         Initialize the API integration.
 
-        :param api_key: Your MEXC API key (defaults to env var if not provided).
-        :param api_secret: Your MEXC API secret (defaults to env var if not provided).
-        :param use_sdk: If True and the official MEXC SDK is available, use it; else use ccxt.
+        :param api_key: Your exchange API key (defaults to env var if not provided).
+        :param api_secret: Your exchange API secret (defaults to env var if not provided).
+        :param exchange_name: The exchange to use (defaults to env var if not provided).
+        :param use_sdk: If True and the official SDK is available, use it; else use ccxt.
         """
         self.api_key = api_key or API_KEY
         self.api_secret = api_secret or API_SECRET
-        self.use_sdk = use_sdk and (Spot is not None)
+        self.exchange_name = exchange_name or EXCHANGE_NAME
+        self.use_sdk = use_sdk and (Spot is not None) and self.exchange_name.lower() == 'mexc'
 
-        if self.use_sdk:
+        if self.use_sdk and self.exchange_name.lower() == 'mexc':
             self.client = Spot(api_key=self.api_key, api_secret=self.api_secret)
             logger.info("Using the official MEXC SDK for API integration.")
         else:
-            self.client = ccxt.mexc({
+            # Get the exchange class dynamically from ccxt
+            exchange_class = getattr(ccxt, self.exchange_name.lower())
+            self.client = exchange_class({
                 'apiKey': self.api_key,
                 'secret': self.api_secret,
                 'enableRateLimit': True,
@@ -46,7 +52,7 @@ class MEXCExchange:
                     'adjustForTimeDifference': True,
                 },
             })
-            logger.info(f"Using ccxt for API integration")
+            logger.info(f"Using ccxt for {self.exchange_name} API integration")
 
     def create_order(
         self,
@@ -160,8 +166,19 @@ class MEXCExchange:
             if self.use_sdk:
                 # Assuming the SDK provides an 'account_info' method.
                 account = self.client.accountInfo()
+                # Check for USDT balance in account data
                 if not account or 'USDT' not in account:
-                    raise ValueError("USDT balance not found in account data (SDK response).")
+                    logger.warning("USDT balance not found in account data (SDK response).")
+                    return {
+                        "balances": {
+                            "USDT": {
+                                "free": 0.0,
+                                "used": 0.0,
+                                "total": 0.0
+                            }
+                        },
+                        "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat()
+                    }
                 usdt_info = account['USDT']
                 free = usdt_info.get('free', 0)
                 used = usdt_info.get('used', 0)
@@ -171,7 +188,17 @@ class MEXCExchange:
                 print(account)
                 # ccxt returns a dict with keys 'free', 'used', and 'total'
                 if not account or 'free' not in account or 'USDT' not in account['free']:
-                    raise ValueError("USDT balance not found in account data (ccxt response).")
+                    logger.warning("USDT balance not found in account data (ccxt response).")
+                    return {
+                        "balances": {
+                            "USDT": {
+                                "free": 0.0,
+                                "used": 0.0,
+                                "total": 0.0
+                            }
+                        },
+                        "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat()
+                    }
                 free = account['free']['USDT']
                 used = account['used']['USDT']
                 total = account['total']['USDT']

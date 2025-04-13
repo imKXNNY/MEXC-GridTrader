@@ -1,14 +1,14 @@
-# MEXC Auto Trading Dashboard - Backend
+# TradeSage - Backend
 
 ## Overview
-The backend is a Flask-based Python application that provides the core functionality for the MEXC Auto Trading Dashboard. It includes backtesting capabilities, trading strategy implementations, and integration with the MEXC exchange API.
+The backend is a Flask-based Python application that provides the core functionality for TradeSage. It includes backtesting capabilities, trading strategy implementations, and integration with cryptocurrency exchange APIs.
 
 ## Key Features
 - **Backtesting Framework**: Simulate trading strategies on historical data
-- **Trading Strategies**: 
+- **Trading Strategies**:
   - MomentumTrendStrategy
   - BoxMacdRsiStrategy
-- **API Integration**: Connect with MEXC exchange
+- **API Integration**: Connect with cryptocurrency exchanges
 - **Visualization**: Plotly-based charting of trading results
 - **Configuration**: Environment variables for easy setup
 
@@ -37,8 +37,8 @@ The backend is a Flask-based Python application that provides the core functiona
 ## Configuration
 Create a `.env` file in the backend directory with the following variables:
 ```
-MEXC_API_KEY=your_api_key
-MEXC_API_SECRET=your_api_secret
+EXCHANGE_API_KEY=your_api_key
+EXCHANGE_API_SECRET=your_api_secret
 FLASK_DEBUG=True
 LOG_LEVEL=INFO
 RESULTS_DIR=results
@@ -52,15 +52,15 @@ poetry run python app.py
 
 ### Docker
 ```bash
-docker build -t mexc-backend .
-docker run -p 5000:5000 mexc-backend
+docker build -t tradesage-backend .
+docker run -p 5000:5000 tradesage-backend
 ```
 
 ## API Documentation
 The backend provides the following endpoints:
 - `/`: Main dashboard
 - `/view/<timestamp>`: View specific backtest results
-- `/account_info`: Get MEXC account information
+- `/account_info`: Get exchange account information
 - `/docs`: View project documentation
 
 ## Contributing

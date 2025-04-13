@@ -1,50 +1,48 @@
-# React + TypeScript + Vite
+# TradeSage - Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## Overview
+The frontend is a React-based web application built with TypeScript, Vite, and Material UI. It provides an interactive user interface for TradeSage, featuring candlestick charts, technical indicators, strategy selection, and backtest management.
 
-Currently, two official plugins are available:
+## Key Features
+- **Interactive Charts**: Candlestick charts with volume overlay and technical indicators
+- **Technical Indicators**: SMA, EMA, RSI, MACD, Bollinger Bands, and Stochastic
+- **Chart Navigation**: Zoom and pan functionality with time range selection
+- **Strategy Selection**: Choose between different trading strategies with customizable parameters
+- **Backtest Management**: Save, archive, and delete backtests with custom names and notes
+- **Strategy Optimization**: Optimize strategy parameters using grid search or genetic algorithms
+- **Responsive Design**: Optimized for desktop and mobile devices
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Installation
+1. Navigate to the frontend directory:
+   ```bash
+   cd frontend
+   ```
 
-## Expanding the ESLint configuration
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
 
-If you are developing a production application, we recommend updating the configuration to enable type aware lint rules:
-
-- Configure the top-level `parserOptions` property like this:
-
-```js
-export default tseslint.config({
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
+## Development
+```bash
+npm run dev
 ```
 
-- Replace `tseslint.configs.recommended` to `tseslint.configs.recommendedTypeChecked` or `tseslint.configs.strictTypeChecked`
-- Optionally add `...tseslint.configs.stylisticTypeChecked`
-- Install [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react) and update the config:
-
-```js
-// eslint.config.js
-import react from 'eslint-plugin-react'
-
-export default tseslint.config({
-  // Set the react version
-  settings: { react: { version: '18.3' } },
-  plugins: {
-    // Add the react plugin
-    react,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended rules
-    ...react.configs.recommended.rules,
-    ...react.configs['jsx-runtime'].rules,
-  },
-})
+## Building for Production
+```bash
+npm run build
 ```
+
+## Testing
+```bash
+npm run test
+```
+
+## Technologies Used
+- React 19
+- TypeScript
+- Vite
+- Material UI
+- Lightweight Charts
+- TailwindCSS
+- Playwright (for testing)

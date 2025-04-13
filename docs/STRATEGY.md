@@ -1,12 +1,12 @@
-# Strategy Documentation: Dynamic Grid Trading Strategy
+# TradeSage: Strategy Documentation
 
-# NEW (For App Versions 0.3.1 and up)
+# Current Strategies (App Version 1.0.0)
 
 ## Current Strategy of Focus
 
 ### FOUNDATIONAL STRATEGY: Momentum Trend-Following
 
-Below is a PineScript V6 implementation of the strategy outlined above. This script is designed to be run on a chart with the specified parameters. It will display the buy and sell signals. The Strategy was built and simple-tested for basic parameterization on the 1H Timeframe of the BTC/USDT Exchange of MEXC.
+Below is a PineScript V6 implementation of the strategy outlined above. This script is designed to be run on a chart with the specified parameters. It will display the buy and sell signals. The Strategy was built and simple-tested for basic parameterization on the 1H Timeframe of the BTC/USDT pair.
 
 ```pinescript (v6)
 // This Pine Script™ code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
@@ -155,5 +155,5 @@ bgcolor(long_exit  ? color.new(color.red,   80) : na)
 
     ## 5. Future Enhancements
     - Automatic parameter optimization (grid search or GA).
-    - Real-time streaming data for live trading, hooking up to actual MEXC account with robust error handling.
+    - Real-time streaming data for live trading, hooking up to exchange accounts with robust error handling.
     - More sophisticated risk management (stop-loss, trailing stops, position sizing adjustments).

@@ -1,7 +1,9 @@
 version: "3.8"
 services:
+  # TradeSage Backend Service
   backend:
     build: ./backend
+    container_name: tradesage-backend
     ports:
       - "5000:5000"
     env_file: .env
@@ -10,11 +12,12 @@ services:
     depends_on:
       - redis
 
-
+  # TradeSage Frontend Service
   frontend:
     build: ./frontend
+    container_name: tradesage-frontend
     ports:
-      - "3000:3000"
+      - "3000:80"
     volumes:
       - ./frontend:/app
     environment:
@@ -22,8 +25,10 @@ services:
     depends_on:
       - backend
 
+  # Redis Service for Caching
   redis:
     image: redis:alpine
+    container_name: tradesage-redis
     ports:
       - "6379:6379"
     volumes:

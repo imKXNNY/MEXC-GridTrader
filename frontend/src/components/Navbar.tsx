@@ -15,13 +15,14 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { path: '/', label: 'Dashboard' },
-  { path: '/backtest', label: 'Backtest' },
+  { path: '/backtest', label: 'Run Backtest' },
+  { path: '/backtests', label: 'Results' },
+  { path: '/optimize', label: 'Optimize' },
   { path: '/docs', label: 'Documentation' },
-  { path: '/results', label: 'Results' },
 ];
 
 const Navbar: React.FC = () => {
-  const { theme } = useTheme();
+  useTheme(); // Keep the theme context active
 
   return (
     <AppBar
@@ -54,7 +55,7 @@ const Navbar: React.FC = () => {
                 },
               }}
             >
-              MEXC Grid Trading
+              TradeSage 📊
             </Typography>
           </Link>
           <Box sx={{ display: 'flex', gap: 3 }}>

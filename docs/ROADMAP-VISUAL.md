@@ -1,4 +1,4 @@
-# MEXC Grid Trading Bot – Visual Roadmap
+# TradeSage 📊 Bot – Visual Roadmap
 
 ```mermaid
 %%{init: {'theme': 'neutral', 'themeVariables': {
@@ -14,7 +14,7 @@
 }}}%%
 
 gantt
-    title MEXC Grid Trading Bot Roadmap
+    title TradeSage 📊 Bot Roadmap
     dateFormat  YYYY-MM-DD
 
     section Core Functionality

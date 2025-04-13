@@ -71,10 +71,10 @@ class BaseDataHandler:
         end_time: Optional[int] = None
     ) -> pd.DataFrame:
         """
-        Fetch historical OHLCV data from MEXC (via ccxt), with CSV caching and incremental updates.
-        
-        Note: MEXC API has a limitation on historical data availability. For 1h interval,
-        the maximum available data is typically 500 candles (approximately 20 days).
+        Fetch historical OHLCV data from the configured exchange (via ccxt), with CSV caching and incremental updates.
+
+        Note: Some exchanges have limitations on historical data availability. For 1h interval,
+        the maximum available data is typically 500-1000 candles depending on the exchange.
         """
 
         logger.debug(f"Starting historical data fetch for {symbol} {interval}")
@@ -96,7 +96,9 @@ class BaseDataHandler:
         else:
             last_ts_ms = start_time or None
 
-        exchange = ccxt.mexc({'enableRateLimit': True})
+        from config import EXCHANGE_NAME
+        exchange_class = getattr(ccxt, EXCHANGE_NAME.lower())
+        exchange = exchange_class({'enableRateLimit': True})
         all_dfs = [cached_df]
 
         # Keep fetching until we’ve gotten up to 'end_time' or no more new data.
@@ -121,7 +123,7 @@ class BaseDataHandler:
             if not ohlcv:
                 logger.info("No additional candles returned from exchange.")
                 if len(all_dfs) == 1 and len(all_dfs[0]) == 500:
-                    logger.warning("Reached maximum historical data limit (500 candles) for %s %s", 
+                    logger.warning("Reached maximum historical data limit (500 candles) for %s %s",
                                   symbol, interval)
                 break
 

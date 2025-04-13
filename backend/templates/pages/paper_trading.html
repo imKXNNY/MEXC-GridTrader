@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Paper Trading Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/plotly.js@2.9.0/dist/plotly.min.js"></script>
+</head>
+
+<body class="bg-gray-100">
+    <div class="container mx-auto py-10">
+        <h1 class="text-3xl font-bold mb-4">Paper Trading Dashboard</h1>
+
+        <div class="flex w-full justify-evenly">
+            <button id="stopStream" onclick="stopStream()" class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">Stop Stream</button>
+        </div>
+
+        <div id="chart" class="my-4"></div>
+
+        <div style="max-height: 30vh; overflow-y: scroll;">
+            <table id="ohclvTable" class="min-w-full bg-white shadow-md rounded overflow-hidden">
+                <thead class="bg-gray-200">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Time</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Open</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">High</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Low</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Close</th>
+                    </tr>
+                </thead>
+                <tbody id="ohclvTableBody" class="bg-white divide-y divide-gray-200"></tbody>
+            </table>
+        </div>
+
+        <div class="mt-6">
+            <h2 class="text-xl font-bold mb-2">Strategy Events</h2>
+            <table id="strategyTable" class="min-w-full bg-white shadow-md rounded overflow-hidden">
+              <thead class="bg-gray-200">
+                <tr>
+                  <th class="px-4 py-2">Type</th>
+                  <th class="px-4 py-2">Status / PnL</th>
+                  <th class="px-4 py-2">Size</th>
+                  <th class="px-4 py-2">Price</th>
+                  <th class="px-4 py-2">Time</th>
+                </tr>
+              </thead>
+              <tbody id="strategyTableBody"></tbody>
+            </table>
+          </div>
+
+        <script>
+            // Arrays for Plotly candlestick
+            let timeVals = [];
+            let openVals = [];
+            let highVals = [];
+            let lowVals = [];
+            let closeVals = [];
+        
+            const eventSource = new EventSource('/sse');
+        
+            const layout = {
+                title: 'Live Candlestick Data',
+                xaxis: { title: 'Time', type: 'date', rangeslider: { visible: true } },
+                yaxis: { title: 'Price' },
+            };
+        
+            const trace = {
+                x: timeVals,
+                open: openVals,
+                high: highVals,
+                low: lowVals,
+                close: closeVals,
+                type: 'candlestick',
+                name: 'OHLC'
+            };
+        
+            // Initialize the chart
+            Plotly.newPlot('chart', [trace], layout);
+        
+            /**
+             *  Helper function: removes highlight from any table row.
+             */
+            function unhighlightRow(row) {
+                if (row) {
+                    row.classList.remove('bg-yellow-100');
+                }
+            }
+        
+            /**
+             *  Helper function: highlights the newest (active) candle row.
+             */
+            function highlightRow(row) {
+                row.classList.add('bg-yellow-100');
+            }
+        
+            /**
+             *  Insert or update a single candle.
+             *  We keep the arrays (timeVals, openVals, etc.) in ascending time order for Plotly,
+             *  but insert rows at the top of the table so the newest candle is at the top.
+             */
+            function processCandle(newData) {
+                const tableBody = document.getElementById('ohclvTableBody');
+                const lastIndex = timeVals.length - 1;
+        
+                // Check if it matches the last candle in arrays => partial update
+                if (timeVals.length > 0 && timeVals[lastIndex] === newData.time) {
+                    // Overwrite arrays
+                    openVals[lastIndex] = newData.open;
+                    highVals[lastIndex] = newData.high;
+                    lowVals[lastIndex]  = newData.low;
+                    closeVals[lastIndex] = newData.close;
+        
+                    // Overwrite the top row (row 0) in the table, since newest is at top
+                    const topRow = tableBody.rows[0];
+                    if (topRow) {
+                        topRow.cells[1].textContent = newData.open;
+                        topRow.cells[2].textContent = newData.high;
+                        topRow.cells[3].textContent = newData.low;
+                        topRow.cells[4].textContent = newData.close;
+        
+                        // Keep it highlighted if it's the active candle
+                        highlightRow(topRow);
+                    }
+                } else {
+                    // 1) Add to the *end* of arrays so chart is chronological
+                    timeVals.push(newData.time);
+                    openVals.push(newData.open);
+                    highVals.push(newData.high);
+                    lowVals.push(newData.low);
+                    closeVals.push(newData.close);
+        
+                    // 2) Insert a new row at the TOP of the table (index 0)
+                    const newRow = tableBody.insertRow(0);
+        
+                    // Build cells
+                    const cellTime  = newRow.insertCell(0);
+                    const cellOpen  = newRow.insertCell(1);
+                    const cellHigh  = newRow.insertCell(2);
+                    const cellLow   = newRow.insertCell(3);
+                    const cellClose = newRow.insertCell(4);
+        
+                    cellTime.textContent  = newData.time;
+                    cellOpen.textContent  = newData.open;
+                    cellHigh.textContent  = newData.high;
+                    cellLow.textContent   = newData.low;
+                    cellClose.textContent = newData.close;
+        
+                    // 3) Highlight the newly inserted row
+                    highlightRow(newRow);
+        
+                    // 4) If there is now a second row, unhighlight it (the previously active candle)
+                    if (tableBody.rows[1]) {
+                        unhighlightRow(tableBody.rows[1]);
+                    }
+                }
+            }
+            function renderStrategyEvent(evt) {
+                const tableBody = document.getElementById('strategyTableBody');
+                const newRow = tableBody.insertRow(0); // insert at top for latest
+
+                const cellType = newRow.insertCell(0);
+                const cellStatus = newRow.insertCell(1);
+                const cellSize = newRow.insertCell(2);
+                const cellPrice = newRow.insertCell(3);
+                const cellTime = newRow.insertCell(4);
+
+                // If it's an order event
+                if (evt.type === 'order') {
+                    cellType.textContent   = 'Order';
+                    cellStatus.textContent = evt.status;
+                    cellSize.textContent   = evt.size;
+                    cellPrice.textContent  = evt.price || '-';
+                    cellTime.textContent   = new Date().toISOString(); // or track actual time from strategy
+                }
+                // If it's a trade event
+                else if (evt.type === 'trade') {
+                    cellType.textContent   = 'Trade';
+                    cellStatus.textContent = `PnL: ${evt.pnl}`;
+                    cellSize.textContent   = evt.size;
+                    cellPrice.textContent  = '-';
+                    cellTime.textContent   = new Date().toISOString();
+                }
+            }
+        
+            // SSE onmessage
+            eventSource.onmessage = function (event) {
+                const payload = JSON.parse(event.data);
+        
+                // If it's historical data (payload.historical is an array)
+                if (payload.historical) {
+                    console.log('Received historical data:', payload.historical.length, 'candles');
+                    const historicalCandles = payload.historical;
+        
+                    // For historical data, we want to add from oldest to newest to the arrays
+                    // so the final chronological order is correct. Then insert rows in reverse
+                    // so the newest ends up at the top.
+        
+                    // 1) Sort by time if not sorted
+                    // (optional, if we trust the server is already sorted)
+                    historicalCandles.sort((a, b) => new Date(a.time) - new Date(b.time));
+        
+                    // 2) Insert them in ascending order into arrays, but table in descending order
+                    for (let i = 0; i < historicalCandles.length; i++) {
+                        const candle = historicalCandles[i];
+                        timeVals.push(candle.time);
+                        openVals.push(candle.open);
+                        highVals.push(candle.high);
+                        lowVals.push(candle.low);
+                        closeVals.push(candle.close);
+                    }
+        
+                    // Clear the table so we can re-insert in reverse
+                    const tableBody = document.getElementById('ohclvTableBody');
+                    tableBody.innerHTML = "";
+        
+                    // Rebuild table in reverse (newest at top)
+                    for (let i = historicalCandles.length - 1; i >= 0; i--) {
+                        const candle = historicalCandles[i];
+                        const newRow = tableBody.insertRow(0);
+        
+                        const cellTime  = newRow.insertCell(0);
+                        const cellOpen  = newRow.insertCell(1);
+                        const cellHigh  = newRow.insertCell(2);
+                        const cellLow   = newRow.insertCell(3);
+                        const cellClose = newRow.insertCell(4);
+        
+                        cellTime.textContent  = candle.time;
+                        cellOpen.textContent  = candle.open;
+                        cellHigh.textContent  = candle.high;
+                        cellLow.textContent   = candle.low;
+                        cellClose.textContent = candle.close;
+                    }
+        
+                    // Highlight the top row as the "active" candle if data is non-empty
+                    if (historicalCandles.length > 0) {
+                        highlightRow(tableBody.rows[0]);
+                    }
+        
+                } else if (payload.strategy) {
+                    console.log("Got a strategy event:", payload.strategy);
+                    // e.g. payload.strategy = {type: "order", status: "Completed", ...}
+                    // Display this in a separate table or area
+                    renderStrategyEvent(payload.strategy);
+                } else {
+                    // It's a single candle
+                    processCandle(payload);
+                } 
+        
+                // Finally, update Plotly with the full arrays
+                Plotly.update('chart', {
+                    x: [timeVals],
+                    open: [openVals],
+                    high: [highVals],
+                    low: [lowVals],
+                    close: [closeVals],
+                }, {}, [0]);
+        
+                // Optional: Scroll to top (since new rows come in at top).
+                // If you prefer to keep the user at top automatically:
+                const tableBody = document.getElementById('ohclvTableBody');
+                tableBody.scrollTop = 0;
+            };
+        
+            // Function to stop the stream
+            const stopStream = () => {
+                fetch('/stop_stream', { method: 'POST' })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            eventSource.close(); // Close the EventSource
+                            alert("Stream stopped.");
+                        } else {
+                            alert("Error stopping stream: " + data.message);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error stopping stream:', error);
+                        alert("Error stopping stream: " + error.message);
+                    });
+            };
+        </script>
+    </div>
+</body>
+
+</html>
