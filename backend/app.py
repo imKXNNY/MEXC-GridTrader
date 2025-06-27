@@ -9,16 +9,15 @@ from queue import Queue
 import json
 import time
 
-# Set up logging
+# Set up logging before importing the shared logger
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+from config import logger
+
 logger.info("Starting the Flask app...")
 
 import plotly
 import plotly.graph_objs as go
 import pandas as pd
-
-from config import logger
 from src.grid_backtester import GridBacktester
 from src.results_storage import (
     save_simulation_result,
