@@ -38,7 +38,12 @@ class GridBacktester(BaseDataHandler):
         else:
             self.store_data(self.symbol, data)
 
-    def simulate(self) -> Tuple[List[Dict], float]:
+    def simulate(self) -> Tuple[List[Dict], float, Dict[str, Any], Dict[str, Any], Dict[str, Any]]:
+        """Run the backtest and return results.
+
+        Returns a tuple containing the list of executed orders, the final broker
+        value, and analysis dictionaries for trades, drawdown and Sharpe ratio.
+        """
         data = self.get_stored_data(self.symbol)
         if data is None or data.empty:
             raise ValueError("No data to run simulation.")
@@ -140,6 +145,12 @@ class GridBacktester(BaseDataHandler):
         # Get results from strategy
         if results:
             strategy = results[0]
-            return strategy.orders, cerebro.broker.getvalue(), trade_analysis, drawdown_analysis, sharpe_analysis
-        
-        return [], 0.0
+            return (
+                strategy.orders,
+                cerebro.broker.getvalue(),
+                trade_analysis,
+                drawdown_analysis,
+                sharpe_analysis,
+            )
+
+        return [], 0.0, {}, {}, {}
